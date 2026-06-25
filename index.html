@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI'Han Academy RAG, Fine-Tuning, Embedding, Hibrit Arama, Reranking ve değerlendirme laboratuvarı" />
+  <title>AI'Han Academy — RAG & Fine-Tuning Laboratuvarı</title>
+  <style>
+    :root {
+      --ink: #13231f;
+      --ink-2: #30443e;
+      --muted: #697b75;
+      --paper: #f4f6f1;
+      --surface: rgba(255,255,255,.88);
+      --surface-solid: #ffffff;
+      --line: #dbe3dd;
+      --line-strong: #c8d4cc;
+      --emerald: #0c7662;
+      --emerald-dark: #075849;
+      --emerald-soft: #e3f4ee;
+      --cyan: #397f8c;
+      --cyan-soft: #e8f4f6;
+      --amber: #b87019;
+      --amber-soft: #fff1d8;
+      --coral: #b55342;
+      --coral-soft: #fdebe6;
+      --violet: #675b9e;
+      --violet-soft: #efecfb;
+      --success: #198754;
+      --danger: #c24132;
+      --shadow-lg: 0 34px 90px rgba(30, 53, 45, .12);
+      --shadow-md: 0 18px 44px rgba(30, 53, 45, .09);
+      --shadow-sm: 0 8px 24px rgba(30, 53, 45, .07);
+      --radius-xl: 34px;
+      --radius-lg: 24px;
+      --radius-md: 17px;
+      --radius-sm: 12px;
+      --max: 1480px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 4%, rgba(12,118,98,.12), transparent 26rem),
+        radial-gradient(circle at 91% 16%, rgba(184,112,25,.10), transparent 24rem),
+        linear-gradient(180deg, #f8faf6 0%, var(--paper) 48%, #eef2ec 100%);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .28;
+      background-image:
+        linear-gradient(rgba(19,35,31,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(19,35,31,.035) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: linear-gradient(to bottom, #000, transparent 75%);
+      z-index: -1;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { color: inherit; }
+    a { color: inherit; }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    p { line-height: 1.72; }
+    .muted { color: var(--muted); }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    .topbar-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 14px 18px 0;
+      pointer-events: none;
+    }
+
+    .topbar {
+      width: min(var(--max), calc(100vw - 36px));
+      margin: 0 auto;
+      min-height: 66px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 22px;
+      align-items: center;
+      padding: 10px 12px 10px 17px;
+      border: 1px solid rgba(200,212,204,.82);
+      background: rgba(250,252,248,.82);
+      backdrop-filter: blur(22px) saturate(130%);
+      -webkit-backdrop-filter: blur(22px) saturate(130%);
+      border-radius: 22px;
+      box-shadow: 0 13px 38px rgba(31,57,48,.10);
+      pointer-events: auto;
+    }
+
+    .brand { display: flex; gap: 12px; align-items: center; text-decoration: none; min-width: max-content; }
+    .brand-mark {
+      width: 41px; height: 41px; border-radius: 14px;
+      display: grid; place-items: center;
+      color: #fff; font-weight: 900; letter-spacing: -.04em;
+      background: linear-gradient(145deg, var(--emerald), #09483d);
+      box-shadow: inset 0 1px rgba(255,255,255,.25), 0 8px 20px rgba(12,118,98,.22);
+    }
+    .brand-copy strong { display: block; font-size: 14px; letter-spacing: -.01em; }
+    .brand-copy span { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .13em; margin-top: 2px; }
+
+    .nav { display: flex; justify-content: center; gap: 4px; min-width: 0; }
+    .nav a {
+      text-decoration: none; color: var(--muted); font-size: 13px; font-weight: 750;
+      padding: 10px 12px; border-radius: 12px; white-space: nowrap; transition: .2s ease;
+    }
+    .nav a:hover, .nav a.active { background: var(--emerald-soft); color: var(--emerald-dark); }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 8px; min-width: max-content;
+      background: #fff; border: 1px solid var(--line); border-radius: 999px;
+      padding: 10px 13px; color: var(--ink-2); font-size: 12px; font-weight: 800;
+    }
+    .status-pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 5px rgba(25,135,84,.1); }
+
+    .shell { width: min(var(--max), calc(100vw - 36px)); margin: 0 auto; padding: 52px 0 90px; }
+
+    .hero {
+      min-height: 690px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.07fr) minmax(430px, .93fr);
+      gap: 28px;
+      align-items: stretch;
+      padding: 26px 0 54px;
+    }
+
+    .hero-copy {
+      border-radius: var(--radius-xl);
+      padding: clamp(32px, 5vw, 76px);
+      display: flex; flex-direction: column; justify-content: center;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.98), rgba(246,250,247,.90)),
+        var(--surface-solid);
+      border: 1px solid rgba(200,212,204,.85);
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-copy::after {
+      content: "";
+      position: absolute;
+      width: 300px; height: 300px; right: -130px; bottom: -160px;
+      border-radius: 50%; border: 52px solid rgba(12,118,98,.055);
+    }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 9px; width: max-content;
+      padding: 8px 12px; border: 1px solid #c6ddd4; background: #eef8f4;
+      border-radius: 999px; color: var(--emerald-dark); text-transform: uppercase;
+      letter-spacing: .11em; font-size: 11px; font-weight: 900; margin-bottom: 26px;
+    }
+    .eyebrow::before { content: ""; width: 18px; height: 2px; border-radius: 9px; background: var(--emerald); }
+
+    .hero h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(3.1rem, 6.7vw, 7.2rem);
+      line-height: .91;
+      letter-spacing: -.07em;
+      max-width: 950px;
+      margin-bottom: 28px;
+      color: #12251f;
+    }
+    .hero h1 .accent { color: var(--emerald); font-style: italic; font-weight: 500; }
+    .hero-copy > p { max-width: 760px; color: var(--ink-2); font-size: clamp(1rem, 1.35vw, 1.19rem); margin-bottom: 30px; }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; position: relative; z-index: 1; }
+    .btn {
+      border: 0; border-radius: 14px; min-height: 47px; padding: 0 18px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      font-weight: 850; font-size: 14px; cursor: pointer; text-decoration: none;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .btn:disabled { opacity: .46; cursor: not-allowed; }
+    .btn-primary { background: var(--ink); color: #fff; box-shadow: 0 12px 24px rgba(19,35,31,.20); }
+    .btn-primary:hover:not(:disabled) { background: var(--emerald-dark); box-shadow: 0 16px 30px rgba(7,88,73,.22); }
+    .btn-secondary { background: rgba(255,255,255,.82); border: 1px solid var(--line-strong); color: var(--ink); }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--emerald); color: var(--emerald-dark); }
+    .btn-ghost { background: transparent; color: var(--emerald-dark); border: 1px dashed #b8d2c8; }
+    .btn-danger { background: var(--coral-soft); color: var(--coral); border: 1px solid #f3cfc6; }
+    .btn-small { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 12px; }
+
+    .hero-lab {
+      border-radius: var(--radius-xl);
+      border: 1px solid rgba(27,81,66,.25);
+      overflow: hidden;
+      background: #0e251f;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      min-height: 620px;
+      color: #effaf6;
+    }
+    .hero-lab::before {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 72% 22%, rgba(86,199,164,.20), transparent 28%),
+        radial-gradient(circle at 17% 84%, rgba(231,166,76,.15), transparent 25%),
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: auto, auto, 30px 30px, 30px 30px;
+    }
+    .lab-top { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 24px 26px; border-bottom: 1px solid rgba(255,255,255,.11); }
+    .lab-top strong { font-size: 14px; letter-spacing: .02em; }
+    .window-dots { display: flex; gap: 7px; }
+    .window-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.23); }
+    .window-dots i:nth-child(1) { background: #ef8c73; }
+    .window-dots i:nth-child(2) { background: #e4b460; }
+    .window-dots i:nth-child(3) { background: #69bd9c; }
+
+    .pipeline-visual { position: relative; z-index: 2; height: 470px; display: grid; place-items: center; padding: 30px; }
+    .orbit { width: min(430px, 90%); aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(255,255,255,.16); position: relative; animation: drift 12s ease-in-out infinite alternate; }
+    .orbit::before, .orbit::after { content: ""; position: absolute; border-radius: 50%; inset: 14%; border: 1px dashed rgba(255,255,255,.14); }
+    .orbit::after { inset: 31%; border-style: solid; }
+    .core {
+      position: absolute; inset: 36%; border-radius: 30px; display: grid; place-items: center; text-align: center;
+      background: linear-gradient(145deg, #e9fff7, #b9e6d6); color: #0c4337; transform: rotate(-7deg);
+      box-shadow: 0 20px 60px rgba(42,196,148,.25), inset 0 1px #fff; font-weight: 950; font-size: 13px;
+    }
+    .node {
+      position: absolute; width: 122px; min-height: 78px; border-radius: 18px;
+      background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(12px); padding: 14px; color: #fff; box-shadow: 0 14px 30px rgba(0,0,0,.16);
+    }
+    .node b { display: block; font-size: 12px; margin-bottom: 5px; }
+    .node span { font-size: 10px; color: rgba(239,250,246,.64); line-height: 1.4; display: block; }
+    .node::after { content: ""; position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #72dab8; box-shadow: 0 0 0 6px rgba(114,218,184,.10); }
+    .n1 { top: -4%; left: 34%; transform: rotate(3deg); }
+    .n2 { right: -7%; top: 35%; transform: rotate(4deg); }
+    .n3 { bottom: -3%; left: 35%; transform: rotate(-3deg); }
+    .n4 { left: -8%; top: 37%; transform: rotate(-5deg); }
+    .n1::after { bottom: -4px; left: 57%; }
+    .n2::after { left: -4px; top: 50%; }
+    .n3::after { top: -4px; left: 45%; }
+    .n4::after { right: -4px; top: 46%; }
+    .hero-microstats { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 22px 22px; }
+    .microstat { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); border-radius: 16px; padding: 14px; }
+    .microstat strong { display: block; color: #fff; font-size: 17px; margin-bottom: 3px; }
+    .microstat span { color: rgba(239,250,246,.57); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+
+    @keyframes drift { from { transform: rotate(-2deg) translateY(4px); } to { transform: rotate(2deg) translateY(-5px); } }
+
+    .section { padding: 72px 0 12px; scroll-margin-top: 92px; }
+    .section-head {
+      display: grid; grid-template-columns: minmax(0, .9fr) minmax(320px, .6fr); gap: 40px;
+      align-items: end; margin-bottom: 28px; padding: 0 4px;
+    }
+    .kicker { color: var(--emerald); font-size: 11px; font-weight: 950; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 13px; }
+    .section h2 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.4rem, 4.4vw, 4.8rem); line-height: .99; letter-spacing: -.055em; margin-bottom: 0; }
+    .section-head p { margin-bottom: 4px; color: var(--muted); font-size: 15px; }
+
+    .definition-stage {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+      background: rgba(255,255,255,.46); border: 1px solid var(--line); border-radius: var(--radius-xl); padding: 18px;
+      box-shadow: var(--shadow-md);
+    }
+    .definition-card { min-height: 390px; border-radius: 27px; padding: clamp(27px, 3.8vw, 50px); position: relative; overflow: hidden; }
+    .definition-card h3 { font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.2rem, 4vw, 4.4rem); line-height: .94; letter-spacing: -.055em; margin-bottom: 22px; }
+    .definition-card p { max-width: 620px; color: var(--ink-2); font-size: 16px; }
+    .definition-card.rag { background: linear-gradient(145deg, #e9f6f1, #dcefe7); border: 1px solid #c6ded4; }
+    .definition-card.ft { background: linear-gradient(145deg, #fff5e5, #f7e8cf); border: 1px solid #edd7b4; }
+    .definition-card::after { content: attr(data-index); position: absolute; right: 22px; bottom: -28px; font: 900 10rem/1 Georgia,serif; color: rgba(19,35,31,.055); }
+    .definition-tag { display: inline-flex; padding: 7px 10px; border-radius: 999px; font-size: 10px; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; background: rgba(255,255,255,.64); border: 1px solid rgba(19,35,31,.08); margin-bottom: 27px; }
+    .definition-flow { display: flex; gap: 8px; flex-wrap: wrap; margin: 28px 0 22px; }
+    .flow-chip { background: rgba(255,255,255,.70); border: 1px solid rgba(19,35,31,.10); padding: 9px 11px; border-radius: 11px; font-size: 12px; font-weight: 850; }
+    .flow-arrow { display: grid; place-items: center; color: var(--muted); }
+    .definition-foot { position: absolute; left: clamp(27px,3.8vw,50px); bottom: 32px; right: 32px; display: flex; justify-content: space-between; gap: 16px; align-items: end; }
+    .definition-foot small { color: var(--muted); max-width: 360px; line-height: 1.5; }
+    .wordmark { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; font-family: Georgia,serif; font-style: italic; font-size: 18px; flex: none; }
+
+    .truth-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+    .truth-item { background: rgba(255,255,255,.75); border: 1px solid var(--line); border-radius: 17px; padding: 19px; }
+    .truth-item b { display: block; font-size: 13px; margin-bottom: 7px; }
+    .truth-item span { color: var(--muted); font-size: 12px; line-height: 1.55; display: block; }
+
+    .concept-rail { display: grid; grid-template-columns: repeat(6, minmax(180px,1fr)); gap: 12px; overflow-x: auto; padding: 4px 4px 14px; scroll-snap-type: x mandatory; }
+    .concept-card {
+      min-height: 220px; scroll-snap-align: start; border-radius: 22px; padding: 20px;
+      background: rgba(255,255,255,.78); border: 1px solid var(--line); cursor: pointer;
+      text-align: left; transition: .2s ease; position: relative; overflow: hidden;
+    }
+    .concept-card:hover, .concept-card.active { transform: translateY(-4px); border-color: #9ec6b7; box-shadow: var(--shadow-sm); background: #fff; }
+    .concept-card .concept-no { display: block; font: italic 24px Georgia,serif; color: var(--emerald); margin-bottom: 38px; }
+    .concept-card h3 { font-size: 16px; margin-bottom: 9px; }
+    .concept-card p { color: var(--muted); font-size: 12px; line-height: 1.58; margin-bottom: 0; }
+    .concept-card::after { content: "+"; position: absolute; right: 16px; top: 15px; width: 25px; height: 25px; display:grid; place-items:center; border-radius:50%; background:#f2f5f2; color:var(--muted); font-weight:900; }
+    .concept-detail { margin-top: 6px; min-height: 220px; border-radius: var(--radius-lg); background: #12251f; color: #ecf8f3; padding: clamp(25px,3vw,42px); display: grid; grid-template-columns: .75fr 1.25fr; gap: 40px; align-items: center; }
+    .concept-detail h3 { font: 500 clamp(2rem,4vw,4rem)/1 Georgia,serif; letter-spacing: -.04em; margin-bottom: 0; color: #fff; }
+    .concept-detail p { color: rgba(236,248,243,.72); margin-bottom: 12px; }
+    .concept-detail ul { margin: 0; padding-left: 20px; color: rgba(236,248,243,.76); line-height: 1.8; }
+
+    .lab-shell { border: 1px solid var(--line); background: rgba(255,255,255,.78); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden; }
+    .lab-nav { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); background: rgba(245,248,244,.82); }
+    .lab-step { padding: 18px 20px; border-right: 1px solid var(--line); position: relative; }
+    .lab-step:last-child { border-right: 0; }
+    .lab-step small { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .11em; font-weight: 900; font-size: 9px; margin-bottom: 5px; }
+    .lab-step strong { font-size: 13px; }
+    .lab-step.active { background: var(--emerald-soft); }
+    .lab-step.active::after { content: ""; height: 3px; background: var(--emerald); position:absolute; left:18px; right:18px; bottom:-1px; border-radius:999px; }
+    .lab-step.done small { color: var(--success); }
+
+    .lab-body { padding: 24px; }
+    .workspace { display: grid; grid-template-columns: 340px minmax(0,1fr); gap: 18px; align-items: start; }
+    .control-stack { display: grid; gap: 14px; position: sticky; top: 98px; }
+    .panel { background: rgba(249,251,248,.90); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+    .panel.white { background: #fff; }
+    .panel.dark { background: #11241e; color: #edf7f3; border-color: #1c3e34; }
+    .panel h3, .panel h4 { margin-bottom: 9px; }
+    .panel-title { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 15px; }
+    .panel-title h3 { font-size: 16px; margin: 0; }
+    .panel-title p { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; border: 1px solid var(--line); background:#fff; color:var(--ink-2); font-size:10px; font-weight:900; white-space:nowrap; }
+    .badge.green { border-color: #bfddcf; background: var(--emerald-soft); color: var(--emerald-dark); }
+    .badge.amber { border-color: #edd4aa; background: var(--amber-soft); color: #87500d; }
+    .badge.violet { border-color: #d7d1ef; background: var(--violet-soft); color: #514680; }
+
+    .corpus-list { display: grid; gap: 8px; }
+    .corpus-btn { border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 14px; text-align:left; cursor:pointer; transition:.18s ease; }
+    .corpus-btn:hover { border-color: #9fc6b8; transform: translateX(2px); }
+    .corpus-btn.active { background: var(--emerald-soft); border-color: #8dc0ad; box-shadow: inset 3px 0 var(--emerald); }
+    .corpus-btn strong { display:block; font-size:13px; margin-bottom:5px; }
+    .corpus-btn span { display:block; color:var(--muted); font-size:11px; line-height:1.45; }
+
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
+    .field label { font-size: 12px; font-weight: 850; }
+    .field output { font-size: 10px; font-weight: 900; color: var(--emerald-dark); background:var(--emerald-soft); border-radius:999px; padding:5px 8px; }
+    .field-help { color: var(--muted); font-size: 10px; line-height: 1.45; margin: -2px 0 9px; }
+    input[type="range"] { width:100%; accent-color: var(--emerald); }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%; border: 1px solid var(--line-strong); border-radius: 12px; padding: 12px 13px;
+      background: #fff; color: var(--ink); outline: none; transition: .18s ease;
+    }
+    textarea { min-height: 116px; resize: vertical; line-height: 1.55; }
+    input:focus, textarea:focus, select:focus { border-color: var(--emerald); box-shadow: 0 0 0 4px rgba(12,118,98,.09); }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:10px 0; border-top:1px solid var(--line); }
+    .switch-row:first-child { border-top:0; }
+    .switch-copy b { display:block; font-size:11px; margin-bottom:2px; }
+    .switch-copy span { color:var(--muted); font-size:9px; line-height:1.35; display:block; }
+    .switch { width:42px; height:24px; border-radius:999px; border:0; background:#cad4ce; position:relative; cursor:pointer; flex:none; transition:.2s; }
+    .switch::after { content:""; position:absolute; width:18px; height:18px; top:3px; left:3px; border-radius:50%; background:#fff; box-shadow:0 2px 7px rgba(0,0,0,.16); transition:.2s; }
+    .switch.on { background:var(--emerald); }
+    .switch.on::after { transform:translateX(18px); }
+
+    .stage { display: grid; gap: 14px; min-width:0; }
+    .stage-grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    .document-list, .chunk-list { display:grid; gap:9px; max-height:430px; overflow:auto; padding-right:4px; }
+    .document, .chunk { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; }
+    .document b, .chunk b { display:block; font-size:11px; margin-bottom:6px; }
+    .document p, .chunk p { margin:0; color:var(--ink-2); font-size:11px; line-height:1.55; }
+    .chunk.active { border-color:#7cb49f; background:#edf8f3; box-shadow:inset 3px 0 var(--emerald); }
+    .chunk.dim { opacity:.42; }
+    .chunk-meta { margin-top:9px; display:flex; justify-content:space-between; gap:8px; color:var(--muted); font-size:9px; }
+
+    .drop-zone { border: 1px dashed #9fb9af; background:#f4f9f6; border-radius:14px; padding:15px; text-align:center; cursor:pointer; color:var(--muted); font-size:11px; line-height:1.5; }
+    .drop-zone:hover { border-color:var(--emerald); color:var(--emerald-dark); }
+
+    .pipeline { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+    .pipe-node { border:1px solid var(--line); border-radius:13px; padding:12px 7px; text-align:center; background:#fff; color:var(--muted); font-size:10px; font-weight:850; position:relative; }
+    .pipe-node.active { background:var(--amber-soft); border-color:#e9c98f; color:#7c4c12; animation:pulse 1.2s infinite; }
+    .pipe-node.done { background:var(--emerald-soft); border-color:#b4d9ca; color:var(--emerald-dark); }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(184,112,25,.18); } 50% { box-shadow:0 0 0 8px rgba(184,112,25,0); } }
+    .progress { height:10px; border-radius:999px; background:#e3e9e5; overflow:hidden; margin:13px 0 0; }
+    .progress > div { width:0%; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--emerald),#57aa8d); transition:width .22s ease; }
+    .console { min-height:150px; max-height:220px; overflow:auto; border-radius:14px; padding:14px; background:#0f201b; color:#aee2d0; font:11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .console-line { margin-bottom:4px; }
+    .console-line.warn { color:#f3c779; }
+    .console-line.success { color:#7ee0b9; }
+
+    .query-box { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+    .example-row { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:11px; }
+    .example-chip { border:1px solid var(--line); background:#fff; color:var(--ink-2); border-radius:999px; padding:8px 10px; font-size:10px; font-weight:800; cursor:pointer; }
+    .example-chip:hover { background:var(--emerald-soft); border-color:#aad1c2; }
+
+    .answer-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .answer-card { border:1px solid var(--line); border-radius:18px; overflow:hidden; background:#fff; min-height:260px; }
+    .answer-head { padding:13px 15px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11px; font-weight:900; }
+    .answer-card.rag { border-color:#91c2af; }
+    .answer-card.rag .answer-head { background:var(--emerald-soft); color:var(--emerald-dark); }
+    .answer-card.prompt .answer-head { background:var(--violet-soft); color:#544982; }
+    .answer-content { padding:17px; color:var(--ink-2); font-size:12px; line-height:1.7; }
+    .answer-placeholder { color:#9aa9a3; text-align:center; padding-top:45px; font-style:italic; }
+    .citation { display:inline-flex; vertical-align:super; padding:1px 5px; margin-left:2px; border-radius:6px; background:var(--emerald-soft); color:var(--emerald-dark); font-size:8px; font-weight:950; }
+
+    .retrieval-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:14px; }
+    .source-row { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; margin-bottom:9px; }
+    .source-row:last-child { margin-bottom:0; }
+    .source-top { display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; font-size:10px; }
+    .source-top b { font-size:11px; }
+    .scorebar { height:6px; border-radius:999px; background:#e7ece8; overflow:hidden; }
+    .scorebar i { display:block; height:100%; background:linear-gradient(90deg,var(--emerald),#5db295); border-radius:inherit; }
+    .source-row p { font-size:10px; color:var(--muted); margin:8px 0 0; line-height:1.55; }
+    .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    .metric { border:1px solid var(--line); border-radius:14px; background:#fff; padding:14px; min-height:88px; }
+    .metric span { display:block; color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:8px; }
+    .metric strong { font: 600 24px Georgia,serif; letter-spacing:-.04em; }
+    .metric small { display:block; color:var(--muted); font-size:9px; margin-top:5px; }
+
+    .ft-layout { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(360px,.55fr); gap:18px; }
+    .goal-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+    .goal-tab { border:1px solid var(--line); background:#fff; border-radius:13px; padding:12px 8px; cursor:pointer; font-size:10px; font-weight:850; }
+    .goal-tab.active { background:var(--amber-soft); border-color:#e9c78e; color:#7f4c0c; }
+    .dataset-table { display:grid; gap:9px; }
+    .sample-row { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:start; border:1px solid var(--line); border-radius:15px; padding:10px; background:#fff; }
+    .sample-row textarea { min-height:82px; font-size:10px; padding:10px; }
+    .icon-btn { width:34px; height:34px; border:1px solid #f0c8bf; background:var(--coral-soft); color:var(--coral); border-radius:10px; cursor:pointer; font-weight:950; }
+    .validation-list { display:grid; gap:7px; margin-top:11px; }
+    .validation-item { display:flex; gap:8px; align-items:flex-start; font-size:10px; color:var(--muted); }
+    .validation-item i { width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:9px; font-weight:950; background:#edf0ee; color:var(--muted); flex:none; }
+    .validation-item.ok i { background:var(--emerald-soft); color:var(--success); }
+    .validation-item.bad i { background:var(--coral-soft); color:var(--danger); }
+    .train-config { display:grid; gap:14px; }
+    .loss-canvas { width:100%; height:210px; border:1px solid rgba(255,255,255,.11); border-radius:14px; background:#0c1d18; display:block; }
+    .train-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+    .train-stat { border:1px solid rgba(255,255,255,.10); border-radius:12px; padding:11px; background:rgba(255,255,255,.055); }
+    .train-stat span { display:block; color:rgba(237,247,243,.50); font-size:8px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+    .train-stat b { color:#fff; font-size:13px; }
+    .before-after { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .test-output { border:1px solid var(--line); background:#fff; border-radius:15px; min-height:160px; padding:15px; font-size:11px; line-height:1.65; color:var(--ink-2); }
+    .test-output.tuned { border-color:#e1bd7d; background:#fff9ef; }
+    .test-output b { display:block; color:var(--ink); margin-bottom:8px; font-size:10px; text-transform:uppercase; letter-spacing:.09em; }
+
+    .decision-wrap { display:grid; grid-template-columns:.8fr 1.2fr; gap:18px; align-items:stretch; }
+    .decision-form { background:#fff; border:1px solid var(--line); border-radius:var(--radius-lg); padding:24px; }
+    .decision-result { border-radius:var(--radius-lg); padding:30px; background:#11241e; color:#eff8f4; position:relative; overflow:hidden; }
+    .decision-result::after { content:""; position:absolute; width:260px; height:260px; border:46px solid rgba(255,255,255,.035); border-radius:50%; right:-120px; bottom:-140px; }
+    .result-label { color:#86cdb4; font-size:10px; text-transform:uppercase; letter-spacing:.13em; font-weight:950; }
+    .decision-result h3 { font:500 clamp(2.8rem,5vw,5.5rem)/.95 Georgia,serif; letter-spacing:-.055em; margin:14px 0 20px; color:#fff; position:relative; z-index:1; }
+    .decision-result p { color:rgba(239,248,244,.70); max-width:720px; position:relative; z-index:1; }
+    .reason-list { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:22px; position:relative; z-index:1; }
+    .reason { border:1px solid rgba(255,255,255,.11); background:rgba(255,255,255,.055); border-radius:13px; padding:12px; color:rgba(239,248,244,.77); font-size:10px; line-height:1.5; }
+    .score-stack { display:grid; gap:9px; margin-top:24px; position:relative; z-index:1; }
+    .score-line { display:grid; grid-template-columns:110px 1fr 35px; gap:10px; align-items:center; font-size:9px; color:rgba(239,248,244,.62); }
+    .score-line i { display:block; height:7px; border-radius:999px; background:rgba(255,255,255,.10); overflow:hidden; }
+    .score-line i b { display:block; height:100%; border-radius:inherit; background:#7ad1b2; }
+    .score-line strong { color:#fff; font-size:10px; text-align:right; }
+
+    .matrix { width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid var(--line); border-radius:20px; background:#fff; box-shadow:var(--shadow-sm); margin-top:18px; }
+    .matrix th, .matrix td { padding:15px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); text-align:left; font-size:11px; vertical-align:top; }
+    .matrix th:last-child, .matrix td:last-child { border-right:0; }
+    .matrix tr:last-child td { border-bottom:0; }
+    .matrix thead th { background:#f0f4f0; font-size:9px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); }
+    .matrix tbody td:first-child { font-weight:900; color:var(--ink); }
+    .good { color:var(--success); font-weight:900; }
+    .medium { color:var(--amber); font-weight:900; }
+    .low { color:var(--coral); font-weight:900; }
+
+    .evaluation-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .eval-card { background:#fff; border:1px solid var(--line); border-radius:20px; padding:20px; min-height:210px; }
+    .eval-card .eval-num { font:italic 22px Georgia,serif; color:var(--emerald); display:block; margin-bottom:34px; }
+    .eval-card h3 { font-size:14px; margin-bottom:8px; }
+    .eval-card p { color:var(--muted); font-size:11px; line-height:1.6; }
+    .eval-card code { display:block; padding:10px; border-radius:10px; background:#f0f4f1; color:var(--ink-2); font-size:9px; white-space:normal; line-height:1.5; }
+
+    .footer { margin-top:80px; border-radius:28px; background:#0f211b; color:#e9f6f1; padding:30px; display:flex; justify-content:space-between; gap:30px; align-items:center; }
+    .footer strong { display:block; font-family:Georgia,serif; font-size:24px; margin-bottom:6px; }
+    .footer span { color:rgba(233,246,241,.55); font-size:11px; }
+    .footer-links { display:flex; flex-wrap:wrap; gap:8px; }
+    .footer-links a { text-decoration:none; border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:8px 11px; font-size:10px; color:rgba(233,246,241,.78); }
+
+    .toast { position:fixed; right:22px; bottom:22px; z-index:100; max-width:360px; background:#11241e; color:#fff; border:1px solid rgba(255,255,255,.10); border-radius:15px; padding:13px 16px; box-shadow:0 18px 50px rgba(0,0,0,.24); transform:translateY(20px); opacity:0; pointer-events:none; transition:.25s ease; font-size:11px; line-height:1.5; }
+    .toast.show { transform:translateY(0); opacity:1; }
+
+    @media (max-width: 1160px) {
+      .nav { display:none; }
+      .topbar { grid-template-columns:1fr auto; }
+      .hero { grid-template-columns:1fr; min-height:0; }
+      .hero-lab { min-height:600px; }
+      .workspace, .ft-layout, .decision-wrap { grid-template-columns:1fr; }
+      .control-stack { position:static; grid-template-columns:1fr 1fr; }
+      .definition-stage { grid-template-columns:1fr; }
+      .concept-rail { grid-template-columns:repeat(6,260px); }
+      .answer-grid { grid-template-columns:1fr; }
+      .evaluation-grid { grid-template-columns:1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .topbar-wrap { padding:8px 9px 0; }
+      .topbar { width:calc(100vw - 18px); border-radius:16px; }
+      .status-pill { display:none; }
+      .shell { width:calc(100vw - 22px); padding-top:25px; }
+      .hero { padding-top:12px; gap:12px; }
+      .hero-copy { padding:30px 23px; border-radius:24px; }
+      .hero h1 { font-size:clamp(2.8rem,15vw,4.8rem); }
+      .hero-lab { border-radius:24px; min-height:520px; }
+      .pipeline-visual { height:390px; padding:18px; }
+      .node { width:105px; min-height:70px; padding:11px; }
+      .hero-microstats { grid-template-columns:1fr; }
+      .section { padding-top:55px; }
+      .section-head { grid-template-columns:1fr; gap:12px; }
+      .definition-card { min-height:460px; }
+      .truth-strip, .control-stack, .stage-grid, .retrieval-grid, .before-after, .reason-list, .evaluation-grid { grid-template-columns:1fr; }
+      .concept-detail { grid-template-columns:1fr; gap:15px; }
+      .lab-nav { grid-template-columns:1fr 1fr; }
+      .lab-step { border-bottom:1px solid var(--line); }
+      .lab-body { padding:12px; }
+      .pipeline { grid-template-columns:1fr; }
+      .query-box { grid-template-columns:1fr; }
+      .goal-tabs { grid-template-columns:1fr 1fr; }
+      .sample-row { grid-template-columns:1fr; }
+      .icon-btn { width:100%; }
+      .matrix { display:block; overflow-x:auto; white-space:nowrap; }
+      .footer { flex-direction:column; align-items:flex-start; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar-wrap">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="AI'Han Academy ana sayfa">
+        <span class="brand-mark">AI</span>
+        <span class="brand-copy"><strong>AI'Han Academy</strong><span>Applied AI Learning Lab</span></span>
+      </a>
+      <nav class="nav" aria-label="Bölüm menüsü">
+        <a href="#what">RAG & Fine-Tuning</a>
+        <a href="#concepts">Kavram Haritası</a>
+        <a href="#rag-lab">RAG Laboratuvarı</a>
+        <a href="#ft-lab">Fine-Tuning Laboratuvarı</a>
+        <a href="#decision">Karar Motoru</a>
+      </nav>
+      <span class="status-pill">Tarayıcı içinde çalışır</span>
+    </header>
+  </div>
+
+  <main class="shell" id="top">
+    <section class="hero" aria-labelledby="heroTitle">
+      <article class="hero-copy">
+        <span class="eyebrow">Üretken Yapay Zekâ Mimarileri</span>
+        <h1 id="heroTitle">Bilgiyi bul.<br><span class="accent">Davranışı öğret.</span></h1>
+        <p>
+          RAG ile modelin hangi bilgiye dayanacağını; Fine-Tuning ile nasıl davranacağını öğretin.
+          Bu laboratuvar, iki yaklaşımı yalnızca tanımlamaz: belge yükletir, chunk üretir, hibrit arama ve
+          reranking uygular, eğitim veri seti hazırlatır, loss eğrisi kurar ve doğru mimariyi seçtirir.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#rag-lab">RAG'i deneyimle <span aria-hidden="true">→</span></a>
+          <a class="btn btn-secondary" href="#ft-lab">Fine-Tuning'i keşfet</a>
+          <a class="btn btn-ghost" href="#decision">Hangisini seçmeliyim?</a>
+        </div>
+      </article>
+
+      <aside class="hero-lab" aria-label="RAG akışı görselleştirmesi">
+        <div class="lab-top">
+          <strong>Knowledge → Behaviour Architecture</strong>
+          <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        </div>
+        <div class="pipeline-visual">
+          <div class="orbit">
+            <div class="node n1"><b>01 · Kaynak</b><span>Belge, veri tabanı, politika, katalog</span></div>
+            <div class="node n2"><b>02 · Retrieval</b><span>Embedding, hibrit arama, reranking</span></div>
+            <div class="node n3"><b>03 · Generation</b><span>Bağlama dayalı yanıt ve atıf</span></div>
+            <div class="node n4"><b>04 · Evaluation</b><span>Doğruluk, sadakat, güvenlik</span></div>
+            <div class="core">RAG<br>+<br>Fine-Tuning</div>
+          </div>
+        </div>
+        <div class="hero-microstats">
+          <div class="microstat"><strong>RAG</strong><span>Güncel bilgi + kaynak</span></div>
+          <div class="microstat"><strong>LoRA / PEFT</strong><span>Verimli davranış uyarlama</span></div>
+          <div class="microstat"><strong>Eval</strong><span>Ölçmeden üretime geçme</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section" id="what">
+      <div class="section-head">
+        <div>
+          <div class="kicker">Önce temel ayrımı kur</div>
+          <h2>RAG bilgi getirir.<br>Fine-Tuning davranışı değiştirir.</h2>
+        </div>
+        <p>
+          İki yaklaşım rakip değildir. Sorunun niteliğine göre ayrı ayrı ya da birlikte kullanılabilir.
+          En sık yapılan hata, güncel kurumsal bilgiyi Fine-Tuning ile modele ezberletmeye çalışmaktır.
+        </p>
+      </div>
+
+      <div class="definition-stage">
+        <article class="definition-card rag" data-index="01">
+          <span class="definition-tag">Retrieval-Augmented Generation</span>
+          <h3>RAG nedir?</h3>
+          <p>
+            RAG, kullanıcı sorusu geldiğinde ilgili kaynak parçalarını bulur ve bu parçaları modelin bağlamına ekler.
+            Model yanıtını yalnızca belleğine değil, getirilen kurumsal veya güncel kanıta da dayandırır.
+          </p>
+          <div class="definition-flow" aria-label="RAG işlem akışı">
+            <span class="flow-chip">Soru</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Arama</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Bağlam</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Kaynaklı Yanıt</span>
+          </div>
+          <div class="definition-foot"><small>En iyi kullanım: sık değişen bilgi, kurum içi belgeler, kaynak göstermek ve güncellenebilir bilgi tabanı.</small><span class="wordmark">R</span></div>
+        </article>
+
+        <article class="definition-card ft" data-index="02">
+          <span class="definition-tag">Model Adaptation</span>
+          <h3>Fine-Tuning nedir?</h3>
+          <p>
+            Fine-Tuning, önceden eğitilmiş bir modeli örnek girdi–çıktı çiftleriyle belirli bir görev, biçim,
+            ton veya karar davranışına uyarlar. Bilgiyi aratmak yerine model ağırlıklarını veya küçük ek katmanları değiştirir.
+          </p>
+          <div class="definition-flow" aria-label="Fine-tuning işlem akışı">
+            <span class="flow-chip">Örnekler</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Eğitim</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Uyarlanmış Model</span><span class="flow-arrow">→</span>
+            <span class="flow-chip">Tutarlı Davranış</span>
+          </div>
+          <div class="definition-foot"><small>En iyi kullanım: tutarlı çıktı biçimi, sınıflandırma, kurum dili, özel görev davranışı ve çok sayıda benzer çağrı.</small><span class="wordmark">F</span></div>
+        </article>
+      </div>
+
+      <div class="truth-strip">
+        <div class="truth-item"><b>RAG modeli yeniden eğitmez</b><span>Bilgiyi sorgu anında getirir; kaynak güncellendiğinde yeniden Fine-Tuning gerekmez.</span></div>
+        <div class="truth-item"><b>Fine-Tuning güvenilir kaynak değildir</b><span>Model davranışı uyarlanır; kaynak gösterme ve güncellik için ayrıca retrieval gerekir.</span></div>
+        <div class="truth-item"><b>Prompt engineering hâlâ gereklidir</b><span>RAG ve Fine-Tuning olsa bile görev, sınır, çıktı şeması ve güvenlik talimatı açık yazılmalıdır.</span></div>
+        <div class="truth-item"><b>Değerlendirme ayrı bir katmandır</b><span>Retrieval kalitesi, yanıt sadakati, güvenlik ve maliyet üretim öncesinde ölçülmelidir.</span></div>
+      </div>
+    </section>
+
+    <section class="section" id="concepts">
+      <div class="section-head">
+        <div><div class="kicker">Atlanmaması gereken modern yapı taşları</div><h2>RAG ve Fine-Tuning tek başına bir sistem değildir.</h2></div>
+        <p>Kartlara tıklayın. Her kavramın mimaride nerede durduğunu ve neden gerekli olduğunu görün.</p>
+      </div>
+      <div class="concept-rail" id="conceptRail" aria-label="Kavram kartları"></div>
+      <div class="concept-detail" id="conceptDetail" aria-live="polite"></div>
+    </section>
+
+    <section class="section" id="rag-lab">
+      <div class="section-head">
+        <div><div class="kicker">Etkileşimli laboratuvar 01</div><h2>Belgeden kaynaklı yanıta: gerçek retrieval akışı.</h2></div>
+        <p>Kendi metin belgenizi ekleyebilir, chunk boyutu ve overlap ayarlayabilir, anahtar kelime–anlamsal ağırlıkları değiştirebilir ve reranking etkisini gözlemleyebilirsiniz.</p>
+      </div>
+
+      <div class="lab-shell">
+        <div class="lab-nav" aria-label="RAG laboratuvarı adımları">
+          <div class="lab-step active" id="ragStep1"><small>Adım 01</small><strong>Bilgi kaynağını seç</strong></div>
+          <div class="lab-step" id="ragStep2"><small>Adım 02</small><strong>Chunk + embedding</strong></div>
+          <div class="lab-step" id="ragStep3"><small>Adım 03</small><strong>Retrieve + rerank</strong></div>
+          <div class="lab-step" id="ragStep4"><small>Adım 04</small><strong>Yanıt + değerlendirme</strong></div>
+        </div>
+
+        <div class="lab-body">
+          <div class="workspace">
+            <aside class="control-stack">
+              <section class="panel">
+                <div class="panel-title"><div><h3>Bilgi havuzu</h3><p>Hazır koleksiyon veya kendi belgeniz</p></div><span class="badge green" id="docBadge">0 belge</span></div>
+                <div class="corpus-list" id="corpusList"></div>
+                <label class="drop-zone" for="fileInput" style="display:block; margin-top:10px;">
+                  <strong style="display:block;color:var(--ink);margin-bottom:4px;">Metin dosyası ekle</strong>
+                  .txt, .md, .csv veya .json · tarayıcı içinde okunur
+                </label>
+                <input class="sr-only" id="fileInput" type="file" accept=".txt,.md,.csv,.json,text/plain,application/json,text/csv" multiple />
+                <details style="margin-top:10px;">
+                  <summary style="cursor:pointer;font-size:10px;font-weight:900;color:var(--emerald-dark);">Metni yapıştırarak ekle</summary>
+                  <div style="margin-top:10px;display:grid;gap:8px;">
+                    <input id="customTitle" type="text" placeholder="Belge başlığı" />
+                    <textarea id="customText" placeholder="Belge içeriğini buraya yapıştırın..."></textarea>
+                    <button class="btn btn-secondary btn-small" id="addCustomDoc">Belgeyi havuza ekle</button>
+                  </div>
+                </details>
+              </section>
+
+              <section class="panel">
+                <div class="panel-title"><div><h3>Retrieval ayarları</h3><p>Parçalama ve arama davranışı</p></div></div>
+                <div class="field">
+                  <div class="field-head"><label for="chunkSize">Chunk boyutu</label><output id="chunkSizeOut">2 cümle</output></div>
+                  <div class="field-help">Küçük chunk daha kesin; büyük chunk daha geniş bağlam sağlar.</div>
+                  <input id="chunkSize" type="range" min="1" max="4" value="2" />
+                </div>
+                <div class="field">
+                  <div class="field-head"><label for="overlap">Overlap</label><output id="overlapOut">1 cümle</output></div>
+                  <div class="field-help">Komşu chunk'lar arasında korunacak ortak cümle sayısı.</div>
+                  <input id="overlap" type="range" min="0" max="2" value="1" />
+                </div>
+                <div class="field">
+                  <div class="field-head"><label for="topK">Top-K</label><output id="topKOut">3 chunk</output></div>
+                  <input id="topK" type="range" min="1" max="6" value="3" />
+                </div>
+                <div class="field">
+                  <div class="field-head"><label for="lexicalWeight">Anahtar kelime ağırlığı</label><output id="lexicalOut">45%</output></div>
+                  <input id="lexicalWeight" type="range" min="0" max="100" value="45" />
+                </div>
+                <div class="field">
+                  <div class="field-head"><label for="semanticWeight">Anlamsal ağırlık</label><output id="semanticOut">55%</output></div>
+                  <input id="semanticWeight" type="range" min="0" max="100" value="55" />
+                </div>
+                <div class="switch-row"><div class="switch-copy"><b>Reranking</b><span>İlk sonuçları ikinci kez daha hassas sırala</span></div><button class="switch on" id="rerankSwitch" aria-pressed="true" aria-label="Reranking aç/kapat"></button></div>
+                <div class="switch-row"><div class="switch-copy"><b>Kaynak işaretleri</b><span>Yanıttaki cümleleri chunk'larla eşleştir</span></div><button class="switch on" id="citationSwitch" aria-pressed="true" aria-label="Kaynak işaretleri aç/kapat"></button></div>
+                <button class="btn btn-primary" id="indexButton" style="width:100%;margin-top:14px;">Chunk'la ve indeksle</button>
+              </section>
+            </aside>
+
+            <div class="stage">
+              <div class="stage-grid">
+                <section class="panel white">
+                  <div class="panel-title"><div><h3>Belge önizleme</h3><p>Aktif bilgi tabanı</p></div><span class="badge" id="corpusBadge">Seçilmedi</span></div>
+                  <div class="document-list" id="documentList"><div class="answer-placeholder">Sol panelden bir bilgi havuzu seçin.</div></div>
+                </section>
+                <section class="panel white">
+                  <div class="panel-title"><div><h3>Chunk önizleme</h3><p>Parçalanmış ve aranabilir içerik</p></div><span class="badge violet" id="chunkBadge">0 chunk</span></div>
+                  <div class="chunk-list" id="chunkList"><div class="answer-placeholder">İndeksleme sonrasında chunk'lar burada görünür.</div></div>
+                </section>
+              </div>
+
+              <section class="panel">
+                <div class="panel-title"><div><h3>RAG pipeline</h3><p>İşlem adımlarını ve indeks durumunu izleyin</p></div><span class="badge amber" id="indexState">Hazır</span></div>
+                <div class="pipeline">
+                  <div class="pipe-node" id="pipe1">Belgeyi oku</div>
+                  <div class="pipe-node" id="pipe2">Chunk üret</div>
+                  <div class="pipe-node" id="pipe3">Embedding hesapla</div>
+                  <div class="pipe-node" id="pipe4">Vektör index</div>
+                  <div class="pipe-node" id="pipe5">Sorguya hazırla</div>
+                </div>
+                <div class="progress"><div id="indexProgress"></div></div>
+                <div class="console" id="ragConsole" style="margin-top:13px;"><div class="console-line">Sistem hazır. Bilgi havuzu seçimi bekleniyor.</div></div>
+              </section>
+
+              <section class="panel white">
+                <div class="panel-title"><div><h3>Soru sor ve üç yaklaşımı karşılaştır</h3><p>Base model · yalnız prompt · RAG</p></div><span class="badge green" id="queryState">İndeks bekleniyor</span></div>
+                <div class="example-row" id="ragExamples"></div>
+                <div class="query-box">
+                  <input id="ragQuestion" type="text" placeholder="Bilgi havuzuna bir soru sorun..." />
+                  <button class="btn btn-primary" id="askButton" disabled>Sor ve retrieve et</button>
+                </div>
+              </section>
+
+              <div class="answer-grid">
+                <article class="answer-card base"><div class="answer-head"><span>Base Model</span><span class="badge">Genel bilgi</span></div><div class="answer-content" id="baseAnswer"><div class="answer-placeholder">Henüz soru sorulmadı.</div></div></article>
+                <article class="answer-card prompt"><div class="answer-head"><span>Prompt-Only</span><span class="badge violet">Talimatlı</span></div><div class="answer-content" id="promptAnswer"><div class="answer-placeholder">Belgesiz ama daha kontrollü yanıt.</div></div></article>
+                <article class="answer-card rag"><div class="answer-head"><span>RAG</span><span class="badge green">Kaynaklı</span></div><div class="answer-content" id="ragAnswer"><div class="answer-placeholder">Getirilen chunk'larla üretilen yanıt.</div></div></article>
+              </div>
+
+              <div class="retrieval-grid">
+                <section class="panel white">
+                  <div class="panel-title"><div><h3>Retrieval Inspector</h3><p>Hibrit skor, reranking ve kaynak metni</p></div><span class="badge" id="retrievedBadge">0 sonuç</span></div>
+                  <div id="sourceList"><div class="answer-placeholder">Soru sonrasında en ilgili chunk'lar burada sıralanır.</div></div>
+                </section>
+                <section class="panel">
+                  <div class="panel-title"><div><h3>Kalite sinyalleri</h3><p>Öğretim amaçlı anlık göstergeler</p></div></div>
+                  <div class="metric-grid">
+                    <div class="metric"><span>Retrieval güveni</span><strong id="metricConfidence">—</strong><small>Top sonuçların birleşik skoru</small></div>
+                    <div class="metric"><span>Grounding</span><strong id="metricGrounding">—</strong><small>Yanıt cümlelerinin kaynak desteği</small></div>
+                    <div class="metric"><span>Bağlam yükü</span><strong id="metricContext">—</strong><small>Tahmini token kullanımı</small></div>
+                    <div class="metric"><span>Yanıt kapsamı</span><strong id="metricCoverage">—</strong><small>Soruyla eşleşen bilgi oranı</small></div>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="ft-lab">
+      <div class="section-head">
+        <div><div class="kicker">Etkileşimli laboratuvar 02</div><h2>Fine-Tuning veri setini kur, eğitimi izle, davranışı test et.</h2></div>
+        <p>Bu bölüm gerçek bir uzak model API'sine bağlanmaz; fakat veri seti tasarımı, JSONL mantığı, epoch, learning rate, LoRA rank, loss ve train–validation ayrımını işlevsel olarak öğretir.</p>
+      </div>
+
+      <div class="lab-shell">
+        <div class="lab-body">
+          <div class="ft-layout">
+            <div class="stage">
+              <section class="panel white">
+                <div class="panel-title"><div><h3>1 · Hedef davranışı seç</h3><p>Fine-Tuning neyi değiştirecek?</p></div><span class="badge amber" id="ftGoalBadge">Üslup</span></div>
+                <div class="goal-tabs" id="goalTabs">
+                  <button class="goal-tab active" data-goal="style">Üslup</button>
+                  <button class="goal-tab" data-goal="format">Çıktı biçimi</button>
+                  <button class="goal-tab" data-goal="classification">Sınıflandırma</button>
+                  <button class="goal-tab" data-goal="policy">Politika davranışı</button>
+                </div>
+                <p class="muted" id="goalDescription" style="font-size:11px;margin-bottom:0;">Yanıtların aynı kurum dili, ton ve açıklık düzeyinde üretilmesini öğretir.</p>
+              </section>
+
+              <section class="panel white">
+                <div class="panel-title"><div><h3>2 · Eğitim örnekleri</h3><p>Girdi–ideal çıktı çiftleri</p></div><span class="badge" id="sampleBadge">0 örnek</span></div>
+                <div class="dataset-table" id="datasetRows"></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px;">
+                  <button class="btn btn-secondary btn-small" id="addSample">Yeni örnek ekle</button>
+                  <button class="btn btn-ghost btn-small" id="exportJsonl">JSONL dışa aktar</button>
+                  <button class="btn btn-danger btn-small" id="resetDataset">Örnekleri sıfırla</button>
+                </div>
+                <div class="validation-list" id="validationList"></div>
+              </section>
+
+              <section class="panel white">
+                <div class="panel-title"><div><h3>4 · Davranışı test et</h3><p>Aynı girdiyi base ve uyarlanmış modelde karşılaştır</p></div><span class="badge green" id="modelStatus">Model eğitilmedi</span></div>
+                <div class="query-box" style="margin-bottom:11px;">
+                  <input id="ftTestInput" type="text" placeholder="Yeni bir test girdisi yazın..." />
+                  <button class="btn btn-primary" id="testFtButton" disabled>Karşılaştır</button>
+                </div>
+                <div class="before-after">
+                  <div class="test-output" id="ftBaseOutput"><b>Base model</b>Henüz test yapılmadı.</div>
+                  <div class="test-output tuned" id="ftTunedOutput"><b>Fine-Tuned / LoRA</b>Eğitim tamamlandığında davranış farkı burada görünür.</div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="stage">
+              <section class="panel">
+                <div class="panel-title"><div><h3>3 · Eğitim yapılandırması</h3><p>Basitleştirilmiş hiperparametreler</p></div><span class="badge violet">PEFT / LoRA</span></div>
+                <div class="train-config">
+                  <div class="field"><div class="field-head"><label for="epochs">Epoch</label><output id="epochsOut">3</output></div><div class="field-help">Modelin eğitim örneklerini kaç kez göreceği.</div><input id="epochs" type="range" min="1" max="8" value="3" /></div>
+                  <div class="field"><div class="field-head"><label for="learningRate">Learning rate</label><output id="lrOut">0.20</output></div><div class="field-help">Ağırlık güncellemelerinin adım büyüklüğünü temsil eder.</div><input id="learningRate" type="range" min="5" max="60" value="20" /></div>
+                  <div class="field"><div class="field-head"><label for="loraRank">LoRA rank</label><output id="rankOut">8</output></div><div class="field-help">Uyarlama kapasitesi ile maliyet arasındaki denge.</div><input id="loraRank" type="range" min="2" max="32" step="2" value="8" /></div>
+                  <div class="field"><label for="splitRatio">Train / validation ayrımı</label><select id="splitRatio"><option value="80">%80 / %20</option><option value="90">%90 / %10</option><option value="70">%70 / %30</option></select></div>
+                </div>
+                <button class="btn btn-primary" id="trainButton" style="width:100%;margin-top:15px;">Eğitimi başlat</button>
+              </section>
+
+              <section class="panel dark">
+                <div class="panel-title"><div><h3 style="color:#fff;">Loss & validation</h3><p style="color:rgba(237,247,243,.52);">Eğitim ilerledikçe hata eğrisi</p></div><span class="badge" id="trainState">Bekliyor</span></div>
+                <canvas class="loss-canvas" id="lossCanvas" width="560" height="260" aria-label="Loss eğrisi"></canvas>
+                <div class="train-stats">
+                  <div class="train-stat"><span>Train loss</span><b id="trainLoss">—</b></div>
+                  <div class="train-stat"><span>Val loss</span><b id="valLoss">—</b></div>
+                  <div class="train-stat"><span>Genelleme</span><b id="generalization">—</b></div>
+                </div>
+                <div class="console" id="ftConsole" style="margin-top:10px;min-height:120px;"><div class="console-line">Eğitim veri seti doğrulaması bekleniyor.</div></div>
+              </section>
+
+              <section class="panel">
+                <h3 style="font-size:14px;">Fine-Tuning'in öğretmediği şey</h3>
+                <p class="muted" style="font-size:10px;margin-bottom:0;">
+                  Yeni tarihli kurum politikaları, sürekli değişen ürün bilgileri veya kanıt gerektiren doküman içeriği için Fine-Tuning tek başına yeterli değildir.
+                  Bu tür bilgi RAG ile getirilmeli; Fine-Tuning ise biçim, ton, görev ve karar örüntüsünü iyileştirmelidir.
+                </p>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="decision">
+      <div class="section-head">
+        <div><div class="kicker">Mimari karar motoru</div><h2>Prompt mu, RAG mi, Fine-Tuning mi, hibrit mi?</h2></div>
+        <p>Senaryonuzun bilgi güncelliği, kaynak ihtiyacı, davranış tutarlılığı ve veri olgunluğuna göre öneri üretin.</p>
+      </div>
+
+      <div class="decision-wrap">
+        <form class="decision-form" id="decisionForm">
+          <div class="field"><label for="knowledgeChange">Bilgi ne kadar sık değişiyor?</label><select id="knowledgeChange"><option value="3">Haftalık / günlük</option><option value="2">Aylık</option><option value="1">Nadiren</option><option value="0">Bilgi değil, davranış önemli</option></select></div>
+          <div class="field"><label for="citationsNeed">Kaynak veya kanıt göstermek gerekiyor mu?</label><select id="citationsNeed"><option value="3">Kesinlikle gerekli</option><option value="1">Yararlı olur</option><option value="0">Gerekli değil</option></select></div>
+          <div class="field"><label for="behaviorNeed">Tutarlı üslup / format / sınıflandırma ne kadar önemli?</label><select id="behaviorNeed"><option value="3">Çok önemli</option><option value="2">Orta düzey</option><option value="0">Önemsiz</option></select></div>
+          <div class="field"><label for="exampleVolume">Kaliteli girdi–çıktı örneğiniz var mı?</label><select id="exampleVolume"><option value="0">Henüz yok</option><option value="1">Az sayıda</option><option value="2">Yeterli</option><option value="3">Çok sayıda ve temiz</option></select></div>
+          <div class="field"><label for="complexityTolerance">Operasyon ve izleme kapasiteniz</label><select id="complexityTolerance"><option value="0">Basit tutmalıyım</option><option value="1">Orta</option><option value="2">Gelişmiş pipeline yönetebilirim</option></select></div>
+          <button class="btn btn-primary" type="submit" style="width:100%;">Mimariyi öner</button>
+        </form>
+
+        <article class="decision-result" id="decisionResult" aria-live="polite">
+          <span class="result-label">Başlangıç önerisi</span>
+          <h3>RAG + güçlü prompt</h3>
+          <p>Güncel bilgi ve kaynak ihtiyacı yüksek olduğunda önce retrieval mimarisini kurmak, davranışı ise iyi bir sistem promptu ve değerlendirme setiyle kontrol etmek en güvenli başlangıçtır.</p>
+          <div class="reason-list" id="reasonList"><div class="reason">Bilgi sık değişiyorsa yeniden eğitim yerine index güncellemek daha yönetilebilirdir.</div><div class="reason">Kaynak zorunluluğu retrieval ve atıf katmanını gerekli kılar.</div></div>
+          <div class="score-stack" id="architectureScores"></div>
+        </article>
+      </div>
+
+      <table class="matrix" aria-label="Prompt, RAG, Fine-Tuning ve hibrit yaklaşım karşılaştırması">
+        <thead><tr><th>Ölçüt</th><th>Prompt Engineering</th><th>RAG</th><th>Fine-Tuning / LoRA</th><th>RAG + Fine-Tuning</th></tr></thead>
+        <tbody>
+          <tr><td>Güncel bilgi</td><td class="low">Düşük</td><td class="good">Çok güçlü</td><td class="low">Zayıf</td><td class="good">Çok güçlü</td></tr>
+          <tr><td>Kaynak gösterme</td><td class="low">Sınırlı</td><td class="good">Doğal avantaj</td><td class="low">Doğal değil</td><td class="good">Çok güçlü</td></tr>
+          <tr><td>Tutarlı üslup / format</td><td class="medium">Orta</td><td class="medium">Orta</td><td class="good">Güçlü</td><td class="good">Çok güçlü</td></tr>
+          <tr><td>Kurulum karmaşıklığı</td><td class="good">Düşük</td><td class="medium">Orta</td><td class="medium">Orta–yüksek</td><td class="low">Yüksek</td></tr>
+          <tr><td>Bilgi güncelleme maliyeti</td><td class="medium">Prompt değişir</td><td class="good">Index yenilenir</td><td class="low">Yeniden eğitim</td><td class="medium">Index + model yönetimi</td></tr>
+          <tr><td>En iyi kullanım</td><td>Görevi netleştirme</td><td>Belgeye dayalı QA</td><td>Davranış uyarlama</td><td>Kurumsal üretim sistemi</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" id="evaluation">
+      <div class="section-head">
+        <div><div class="kicker">Üretime geçmeden önce</div><h2>Modern sistemin eksik bırakılmaması gereken katmanları.</h2></div>
+        <p>İyi bir prototip yanıt üretir. İyi bir üretim sistemi ise ne zaman yanıt vermemesi gerektiğini, hangi kaynağa dayandığını ve ne kadar güvenilir olduğunu da bilir.</p>
+      </div>
+      <div class="evaluation-grid">
+        <article class="eval-card"><span class="eval-num">01</span><h3>Groundedness / Faithfulness</h3><p>Yanıttaki iddiaların getirilen kaynaklarla gerçekten desteklenip desteklenmediğini ölçer.</p><code>Yanıt iddiası → kaynak cümlesi → destek var mı?</code></article>
+        <article class="eval-card"><span class="eval-num">02</span><h3>Retrieval Precision & Recall</h3><p>Getirilen chunk'ların ne kadarının ilgili olduğunu ve gerekli bilginin ne kadarının bulunabildiğini ölçer.</p><code>Doğru chunk / getirilen chunk · bulunan bilgi / gerekli bilgi</code></article>
+        <article class="eval-card"><span class="eval-num">03</span><h3>Guardrails & Yetkilendirme</h3><p>Kişisel veri, gizli içerik, rol bazlı erişim ve güvenli reddetme davranışını retrieval öncesi ve sonrası denetler.</p><code>Kim, hangi belgeyi, hangi amaçla görebilir?</code></article>
+        <article class="eval-card"><span class="eval-num">04</span><h3>Observability</h3><p>Sorgu, getirilen chunk, model sürümü, maliyet, gecikme ve kullanıcı geri bildirimini izlenebilir hâle getirir.</p><code>Trace ID · model · index · prompt · latency · feedback</code></article>
+        <article class="eval-card"><span class="eval-num">05</span><h3>Context Engineering</h3><p>Modele yalnızca bilgi değil; görev, araç çıktısı, kullanıcı durumu, kaynak sırası ve çıktı şeması birlikte hazırlanır.</p><code>Doğru bilgi + doğru sıra + doğru talimat + doğru sınır</code></article>
+        <article class="eval-card"><span class="eval-num">06</span><h3>Agent & Tool Use</h3><p>Model yalnızca metin üretmek yerine arama, hesaplama, veri tabanı veya iş akışı araçlarını kontrollü biçimde çağırabilir.</p><code>Planla → aracı seç → sonucu doğrula → yanıtla</code></article>
+        <article class="eval-card"><span class="eval-num">07</span><h3>Caching & Maliyet</h3><p>Tekrarlanan sorguların, embeddinglerin ve sabit bağlamın önbelleğe alınması gecikmeyi ve maliyeti düşürür.</p><code>Semantic cache · embedding cache · prompt cache</code></article>
+        <article class="eval-card"><span class="eval-num">08</span><h3>Human-in-the-Loop</h3><p>Yüksek riskli yanıtlar, düşük güven skorları ve politika istisnaları insan incelemesine yönlendirilir.</p><code>Düşük güven → insan doğrulaması → düzeltme → öğrenme</code></article>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div><strong>AI'Han Academy</strong><span>Keşfet · Öğren · Dene · Üret — Ayhan Bozkurt</span></div>
+      <div class="footer-links"><a href="#what">Kavramlar</a><a href="#rag-lab">RAG Lab</a><a href="#ft-lab">Fine-Tuning Lab</a><a href="#decision">Karar Motoru</a></div>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    "use strict";
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+    const escapeHTML = (value = "") => String(value).replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+    const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
+
+    const toast = (message) => {
+      const el = $("#toast");
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => el.classList.remove("show"), 2600);
+    };
+
+    const concepts = [
+      { no:"01", title:"Prompt Engineering", short:"Görevi, sınırı ve çıktı biçimini açıklaştırır.", body:"Prompt engineering, modelin görevi nasıl yorumlayacağını belirleyen en düşük maliyetli kontrol katmanıdır. RAG'de getirilen bağlamın nasıl kullanılacağını; Fine-Tuning'de ise uyarlanmış davranışın hangi görevde uygulanacağını açıklar.", bullets:["Sistem ve kullanıcı talimatlarını ayırın.","Çıktı şeması ve reddetme koşullarını tanımlayın.","Örnekleri yalnızca gerekli olduğunda ekleyin."] },
+      { no:"02", title:"Embedding", short:"Metni karşılaştırılabilir sayısal temsile dönüştürür.", body:"Embedding, kelime veya metin parçalarını anlamsal benzerlik hesaplanabilecek vektörlere dönüştürür. RAG sorgusu ve chunk'lar aynı temsil uzayında karşılaştırılır.", bullets:["Embedding modeli alan ve dile uygun olmalı.","Model değişirse index yeniden üretilebilir.","Benzerlik tek başına doğruluk anlamına gelmez."] },
+      { no:"03", title:"Vector Database", short:"Embeddingleri ve metadata'yı aranabilir tutar.", body:"Vektör veri tabanı, chunk embeddinglerini belge kimliği, tarih, yetki ve kaynak gibi metadata ile birlikte saklar. Filtreleme ve yaklaşık en yakın komşu araması sağlar.", bullets:["Metadata filtresi erişim denetimi için kritiktir.","Index güncelliği düzenli izlenmelidir.","Silinen belgenin vektörü de silinmelidir."] },
+      { no:"04", title:"Chunking & Overlap", short:"Belgeyi retrieval için anlamlı parçalara böler.", body:"Chunking yalnızca sabit karakter sayısı değildir. Başlık, paragraf, tablo, bölüm ve semantik sınırlar korunmalıdır. Overlap, parça sınırında kaybolabilecek bilgiyi azaltır.", bullets:["Çok küçük chunk bağlamı koparabilir.","Çok büyük chunk gürültü ve maliyet yaratır.","Belge türüne göre farklı strateji kullanın."] },
+      { no:"05", title:"Hybrid Search", short:"Anahtar kelime ve anlamsal aramayı birleştirir.", body:"Hibrit arama, tam terim eşleşmesinin gücü ile semantik benzerliğin esnekliğini bir araya getirir. Kod, kişi adı, sınıflama numarası ve mevzuat maddesi gibi kesin ifadelerde özellikle yararlıdır.", bullets:["BM25 + vector score birlikte kullanılabilir.","Ağırlıklar veri seti üzerinde ayarlanmalıdır.","Sorgu türüne göre dinamik ağırlık mümkündür."] },
+      { no:"06", title:"Reranking", short:"İlk adayları daha güçlü bir modelle yeniden sıralar.", body:"İlk retrieval hızlı ama kaba olabilir. Reranker, sorgu–chunk çiftlerini daha ayrıntılı değerlendirerek en ilgili parçaları bağlama taşır.", bullets:["Top-50 getir, Top-5 rerank et yaklaşımı yaygındır.","Gecikme–kalite dengesi ölçülmelidir.","Reranking zayıf kaynak içeriğini düzeltemez."] },
+      { no:"07", title:"PEFT / LoRA", short:"Tüm modeli değil küçük uyarlama bileşenlerini eğitir.", body:"Parameter-Efficient Fine-Tuning, büyük modelin bütün ağırlıklarını güncellemeden küçük ek parametrelerle davranış uyarlaması yapar. LoRA bu yaklaşımın yaygın yöntemlerinden biridir.", bullets:["Daha düşük hesaplama ve depolama maliyeti.","Farklı görevler için ayrı adaptörler.","Kaliteli örnek ve değerlendirme yine zorunludur."] },
+      { no:"08", title:"Evaluation", short:"Retrieval ve generation kalitesini ayrı ayrı ölçer.", body:"RAG değerlendirmesi yalnızca son cevaba bakmaz. Önce doğru chunk'ın bulunup bulunmadığı, sonra cevabın kaynağa sadık ve soruyla ilgili olup olmadığı ölçülür.", bullets:["Golden question set oluşturun.","Retrieval ve answer metriklerini ayırın.","İnsan değerlendirmesini otomatik skorlarla birleştirin."] },
+      { no:"09", title:"Guardrails", short:"Veri, güvenlik ve davranış sınırlarını uygular.", body:"Guardrails; giriş filtreleme, yetki kontrolü, hassas veri maskeleme, kaynak izinleri, çıktı doğrulama ve güvenli reddetme katmanlarını kapsar.", bullets:["Belge erişimi kullanıcı rolüne göre filtrelenmeli.","Prompt injection belge içeriğinden de gelebilir.","Yüksek riskli eylem insan onayına gitmeli."] },
+      { no:"10", title:"Context Engineering", short:"Model bağlamının tamamını sistematik biçimde tasarlar.", body:"Context engineering; prompt, retrieval sonucu, araç çıktısı, kullanıcı durumu, geçmiş, bellek ve çıktı şemasını doğru sıra ve bütçeyle model bağlamına yerleştirir.", bullets:["Bağlam penceresi sınırsız değildir.","Öncelik ve sıra yanıtı etkiler.","Gereksiz bağlam doğruluğu azaltabilir."] },
+      { no:"11", title:"Agents & Tools", short:"Modelin dış sistemlerde kontrollü işlem yapmasını sağlar.", body:"Ajan tabanlı sistemlerde model, yalnızca yanıt yazmak yerine arama, hesaplama, katalog, veritabanı veya iş akışı araçlarını çağırır. RAG bu araçlardan biri olabilir.", bullets:["Araç şemaları açık ve sınırlı olmalı.","Her araç çıktısı doğrulanmalıdır.","Yetki ve geri alma mekanizması tasarlanmalıdır."] },
+      { no:"12", title:"Observability", short:"Sistemin neden böyle yanıt verdiğini izlenebilir kılar.", body:"Observability; sorgu, prompt sürümü, retrieval sonuçları, model, latency, maliyet, hata ve kullanıcı geri bildirimini trace düzeyinde toplar.", bullets:["Her yanıt bir trace kimliği taşıyabilir.","Index ve prompt sürümü kaydedilmelidir.","Gerçek kullanıcı hataları eval setine dönüştürülmelidir."] }
+    ];
+
+    function renderConcepts(activeIndex = 0) {
+      $("#conceptRail").innerHTML = concepts.map((c,i) => `
+        <button class="concept-card ${i===activeIndex?"active":""}" data-index="${i}">
+          <span class="concept-no">${c.no}</span><h3>${escapeHTML(c.title)}</h3><p>${escapeHTML(c.short)}</p>
+        </button>`).join("");
+      const c = concepts[activeIndex];
+      $("#conceptDetail").innerHTML = `<h3>${escapeHTML(c.title)}</h3><div><p>${escapeHTML(c.body)}</p><ul>${c.bullets.map(x=>`<li>${escapeHTML(x)}</li>`).join("")}</ul></div>`;
+      $$(".concept-card").forEach(btn => btn.addEventListener("click", () => renderConcepts(Number(btn.dataset.index))));
+    }
+    renderConcepts();
+
+    const corpora = {
+      library: {
+        title:"Kütüphane Rehberleri",
+        description:"Katalog, çocuk bölümü, kaynak değerlendirme ve üyelik bilgileri",
+        examples:["Katalogda kitabın raftaki yerini nasıl bulurum?","Çocuk bölümü hangi yaş grubu içindir?","Bir kaynağın güvenilirliğini nasıl değerlendiririm?"],
+        docs:[
+          { title:"Katalog Kullanım Rehberi", text:"Katalog taramasında önce eser adı, yazar veya anahtar kelime ile arama yapılır. Sonuçlar kaynak türü, dil, tarih, yazar ve konu filtresiyle daraltılabilir. Fiziksel kaynağın raftaki yerini bulmak için sınıflama numarası ve koleksiyon bilgisi not edilmelidir. Katalogdaki erişilebilir durumu, kaynağın rafta mı ödünçte mi olduğunu gösterir." },
+          { title:"Çocuk Bölümü Kullanım Politikası", text:"Çocuk bölümü 4-12 yaş arası kullanıcılar için tasarlanmıştır. Alanda yaşa uygun hikâye kitapları, bilgi kitapları, etkinlik materyalleri ve ebeveyn rehberleri bulunur. Etkinlik saatlerinde grup kullanımı mümkündür. Küçük yaş gruplarında yetişkin refakati önerilir." },
+          { title:"Kaynak Değerlendirme Rehberi", text:"Bir kaynağın güvenilirliğini değerlendirirken yazarın uzmanlığı, yayıncı, yayın tarihi, kullanılan kanıtlar ve metnin amacı birlikte incelenmelidir. Tek bir kaynağa bağlı kalmak yerine farklı ve bağımsız kaynaklar karşılaştırılmalıdır. Yapay zekâ tarafından verilen atıflar özgün veri tabanında ayrıca doğrulanmalıdır." }
+        ]
+      },
+      support: {
+        title:"Teknik Destek Belgeleri",
+        description:"Şifre, hesap güvenliği, sistem performansı ve başvuru süreçleri",
+        examples:["Şifremi unuttum, bağlantı ne kadar geçerli?","Sistem yavaşsa önce neyi kontrol etmeliyim?","İki adımlı doğrulama neden önemlidir?"],
+        docs:[
+          { title:"Şifre Sıfırlama Süreci", text:"Şifresini unutan kullanıcı giriş ekranındaki Şifremi Unuttum bağlantısını kullanmalıdır. Sistem kayıtlı e-posta adresine sıfırlama bağlantısı gönderir. Bağlantı 30 dakika boyunca geçerlidir. Güvenlik nedeniyle son kullanılan üç parola yeniden seçilemez." },
+          { title:"Performans Sorunları Rehberi", text:"Sistem yavaş çalışıyorsa önce internet bağlantısı ve tarayıcı güncelliği kontrol edilmelidir. Ardından önbellek temizlenip gizli pencerede yeniden denenebilir. Sorun devam ederse tarih-saat, tarayıcı sürümü ve hata ekran görüntüsüyle destek kaydı açılmalıdır." },
+          { title:"Hesap Güvenliği Notu", text:"Güçlü ve benzersiz parola kullanmak hesap ele geçirme riskini azaltır. İki adımlı doğrulama, parola bilinse bile ikinci doğrulama olmadan giriş yapılmasını engeller. Beklenmeyen giriş bildirimlerinde parola değiştirilmeli ve açık oturumlar sonlandırılmalıdır." }
+        ]
+      },
+      education: {
+        title:"Python Eğitim Notları",
+        description:"Fonksiyonlar, hata ayıklama, değişkenler ve öğrenme pratikleri",
+        examples:["Python'da fonksiyon neden kullanılır?","Syntax Error nasıl çözülür?","Döngü ile koşul arasındaki fark nedir?"],
+        docs:[
+          { title:"Fonksiyonlar", text:"Fonksiyonlar tekrar eden işleri bir kez tanımlayıp gerektiğinde çağırmayı sağlar. Parametreler fonksiyona veri taşır. return ifadesi sonucu çağıran yere geri gönderir. Küçük ve tek amaçlı fonksiyonlar kodun okunabilirliğini ve test edilebilirliğini artırır." },
+          { title:"Debugging Girişi", text:"Debugging hatanın nedenini sistemli biçimde bulma sürecidir. Önce hata mesajının türü ve satır numarası okunmalıdır. Syntax Error çoğunlukla eksik parantez, tırnak, virgül veya iki nokta nedeniyle oluşur. Sorunu küçük parçalara ayırmak ve ara değerleri yazdırmak hatayı izlemeyi kolaylaştırır." },
+          { title:"Koşullar ve Döngüler", text:"Koşullar bir ifadenin doğru veya yanlış olmasına göre karar verir. Döngüler belirli bir kod bloğunu tekrarlar. for döngüsü bir koleksiyon üzerinde ilerlemek için, while döngüsü ise bir koşul doğru kaldığı sürece çalışmak için kullanılır." }
+        ]
+      }
+    };
+
+    const ragState = {
+      corpusKey:null,
+      docs:[],
+      chunks:[],
+      indexed:false,
+      rerank:true,
+      citations:true,
+      timer:null
+    };
+
+    function renderCorpora() {
+      $("#corpusList").innerHTML = Object.entries(corpora).map(([key,c]) => `<button class="corpus-btn" data-key="${key}"><strong>${escapeHTML(c.title)}</strong><span>${escapeHTML(c.description)}</span></button>`).join("");
+      $$(".corpus-btn").forEach(btn => btn.addEventListener("click", () => selectCorpus(btn.dataset.key)));
+    }
+    renderCorpora();
+
+    function selectCorpus(key) {
+      clearInterval(ragState.timer);
+      ragState._chunksBuilt = ragState._embedded = ragState._indexedLog = false;
+      $("#indexProgress").style.width = "0%";
+      setPipe(0);
+      ragState.corpusKey = key;
+      ragState.docs = corpora[key].docs.map(d => ({...d}));
+      ragState.chunks = [];
+      ragState.indexed = false;
+      $$(".corpus-btn").forEach(b => b.classList.toggle("active", b.dataset.key === key));
+      $("#corpusBadge").textContent = corpora[key].title;
+      $("#docBadge").textContent = `${ragState.docs.length} belge`;
+      $("#chunkBadge").textContent = "0 chunk";
+      $("#queryState").textContent = "İndeks bekleniyor";
+      $("#askButton").disabled = true;
+      $("#indexState").textContent = "Belge seçildi";
+      setRagStep(2);
+      renderDocuments();
+      renderChunks();
+      renderExamples();
+      resetRagAnswers();
+      logRag(`Bilgi havuzu seçildi: ${corpora[key].title}`, "success", true);
+    }
+
+    function renderDocuments() {
+      const list = $("#documentList");
+      if (!ragState.docs.length) { list.innerHTML = `<div class="answer-placeholder">Henüz belge yok.</div>`; return; }
+      list.innerHTML = ragState.docs.map((d,i)=>`<article class="document"><b>${String(i+1).padStart(2,"0")} · ${escapeHTML(d.title)}</b><p>${escapeHTML(d.text)}</p></article>`).join("");
+      $("#docBadge").textContent = `${ragState.docs.length} belge`;
+    }
+
+    function renderExamples() {
+      const examples = ragState.corpusKey ? corpora[ragState.corpusKey].examples : [];
+      $("#ragExamples").innerHTML = examples.map(q=>`<button class="example-chip" data-q="${escapeHTML(q)}">${escapeHTML(q)}</button>`).join("");
+      $$(".example-chip", $("#ragExamples")).forEach(btn=>btn.addEventListener("click",()=>$("#ragQuestion").value=btn.dataset.q));
+    }
+
+    function splitSentences(text) {
+      return String(text).replace(/\s+/g," ").trim().match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(s=>s.trim()).filter(Boolean) || [];
+    }
+
+    function buildChunks() {
+      const size = Number($("#chunkSize").value);
+      const overlap = Math.min(Number($("#overlap").value), Math.max(0,size-1));
+      const step = Math.max(1, size-overlap);
+      const result = [];
+      ragState.docs.forEach((doc,docIndex)=>{
+        const sentences = splitSentences(doc.text);
+        for(let i=0;i<sentences.length;i+=step){
+          const part=sentences.slice(i,i+size);
+          if(!part.length) continue;
+          result.push({
+            id:`D${docIndex+1}-C${result.length+1}`,
+            docTitle:doc.title,
+            docIndex,
+            text:part.join(" "),
+            sentenceStart:i,
+            tokens:tokenize(part.join(" ")).length
+          });
+          if(i+size>=sentences.length) break;
+        }
+      });
+      return result;
+    }
+
+    const stopWords = new Set("ve veya ile için bir bu şu o da de mi mı mu mü ne nasıl neden hangi kaç çok daha en gibi ise olarak olan olur sonra önce göre kadar fakat ancak çünkü hem her tüm bazı kendi ilgili üzerinden içinde dışında tarafından".split(" "));
+    const synonyms = {
+      "şifre":["parola","password"], "parola":["şifre","password"], "kitap":["eser","kaynak"], "kaynak":["kitap","eser"],
+      "hata":["error","sorun"], "error":["hata","sorun"], "çocuk":["yaş","küçük"], "fonksiyon":["return","parametre"],
+      "bulurum":["arama","katalog","bulmak"], "güvenilir":["uzmanlık","kanıt","yayıncı"], "yavaş":["performans","önbellek"],
+      "doğrulama":["güvenlik","iki","adımlı"], "döngü":["for","while","tekrar"], "koşul":["if","karar"]
+    };
+
+    function normalizeText(text) {
+      return String(text).toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9çğıöşü\s-]/gi," ").replace(/\s+/g," ").trim();
+    }
+    function tokenize(text) { return normalizeText(text).split(" ").filter(t=>t.length>1 && !stopWords.has(t)); }
+
+    function termFrequency(tokens) {
+      const map = new Map(); tokens.forEach(t=>map.set(t,(map.get(t)||0)+1)); return map;
+    }
+
+    function lexicalScore(query, text) {
+      const q=tokenize(query), c=tokenize(text), tf=termFrequency(c);
+      if(!q.length||!c.length) return 0;
+      let score=0;
+      q.forEach(term=>{
+        if(tf.has(term)) score += 1 + Math.log(1+tf.get(term));
+        (synonyms[term]||[]).forEach(s=>{ if(tf.has(s)) score += .55; });
+      });
+      const phrase=normalizeText(query);
+      if(phrase.length>4 && normalizeText(text).includes(phrase)) score+=3;
+      return score/(q.length*2.4);
+    }
+
+    function hashVector(text, dim=72) {
+      const vec=new Array(dim).fill(0);
+      const tokens=tokenize(text);
+      const expanded=[];
+      tokens.forEach(t=>{expanded.push(t); (synonyms[t]||[]).forEach(s=>expanded.push(s));});
+      expanded.forEach((token,idx)=>{
+        let hash=2166136261;
+        for(let i=0;i<token.length;i++){ hash^=token.charCodeAt(i); hash=Math.imul(hash,16777619); }
+        const pos=Math.abs(hash)%dim;
+        const sign=(hash>>>1)%2===0?1:-1;
+        vec[pos]+=sign*(1+(idx%3)*.03);
+      });
+      const norm=Math.sqrt(vec.reduce((s,v)=>s+v*v,0))||1;
+      return vec.map(v=>v/norm);
+    }
+    function cosine(a,b){ return a.reduce((s,v,i)=>s+v*b[i],0); }
+
+    function rankChunks(question) {
+      const lw=Number($("#lexicalWeight").value)/100;
+      const sw=Number($("#semanticWeight").value)/100;
+      const total=lw+sw||1;
+      const qv=hashVector(question);
+      const qTokens=tokenize(question);
+      let ranked=ragState.chunks.map(chunk=>{
+        const lexical=clamp(lexicalScore(question,chunk.text),0,1.5);
+        const semantic=clamp((cosine(qv,hashVector(chunk.text))+1)/2,0,1);
+        const titleBoost = qTokens.some(t => normalizeText(chunk.docTitle).includes(t)) ? 0.08 : 0;
+        let combined=(lexical*lw+semantic*sw)/total+titleBoost;
+        return {...chunk,lexical,semantic,combined,rerank:combined};
+      }).sort((a,b)=>b.combined-a.combined);
+
+      if(ragState.rerank){
+        ranked=ranked.map((item,index)=>{
+          const sentenceScores=splitSentences(item.text).map(s=>lexicalScore(question,s));
+          const bestSentence=Math.max(0,...sentenceScores);
+          const exactOverlap=qTokens.filter(t=>tokenize(item.text).includes(t)).length/Math.max(1,qTokens.length);
+          const rerank=item.combined*.72+clamp(bestSentence,0,1)*.18+exactOverlap*.10-(index*.001);
+          return {...item,rerank};
+        }).sort((a,b)=>b.rerank-a.rerank);
+      }
+      return ranked;
+    }
+
+    function renderChunks(activeIds=[]) {
+      const list=$("#chunkList");
+      if(!ragState.chunks.length){list.innerHTML=`<div class="answer-placeholder">İndeksleme sonrasında chunk'lar burada görünür.</div>`;return;}
+      list.innerHTML=ragState.chunks.map((c,i)=>{
+        const active=activeIds.includes(c.id);
+        const cls=active?"active":(activeIds.length?"dim":"");
+        return `<article class="chunk ${cls}"><b>${escapeHTML(c.id)} · ${escapeHTML(c.docTitle)}</b><p>${escapeHTML(c.text)}</p><div class="chunk-meta"><span>${c.tokens} token*</span><span>parça ${i+1}</span></div></article>`;
+      }).join("");
+      $("#chunkBadge").textContent=`${ragState.chunks.length} chunk`;
+    }
+
+    function setRagStep(step) {
+      for(let i=1;i<=4;i++){
+        const el=$(`#ragStep${i}`);
+        el.classList.toggle("active",i===step);
+        el.classList.toggle("done",i<step);
+      }
+    }
+
+    function setPipe(step) {
+      for(let i=1;i<=5;i++){
+        const el=$(`#pipe${i}`);
+        el.className="pipe-node"+(i<step?" done":i===step?" active":"");
+      }
+    }
+
+    function logRag(message,type="",clear=false){
+      const c=$("#ragConsole");
+      if(clear)c.innerHTML="";
+      const line=document.createElement("div");
+      line.className=`console-line ${type}`;
+      line.textContent=`[${new Date().toLocaleTimeString("tr-TR")}] ${message}`;
+      c.appendChild(line); c.scrollTop=c.scrollHeight;
+    }
+
+    function startIndexing(){
+      if(!ragState.docs.length){toast("Önce bir bilgi havuzu seçin veya belge ekleyin.");return;}
+      clearInterval(ragState.timer);
+      ragState.indexed=false;
+      $("#askButton").disabled=true;
+      $("#indexButton").disabled=true;
+      $("#indexState").textContent="İşleniyor";
+      $("#queryState").textContent="İndeksleniyor";
+      setRagStep(2);
+      logRag("İndeksleme başlatıldı.","warn",true);
+      let progress=0;
+      const milestones=[16,35,58,80,96];
+      ragState.timer=setInterval(()=>{
+        progress=Math.min(100,progress+5+Math.random()*7);
+        $("#indexProgress").style.width=`${progress}%`;
+        const step=milestones.findIndex(m=>progress<m)+1;
+        const pipeStep=step===0?5:step;
+        setPipe(pipeStep);
+        if(progress>=18 && !ragState._chunksBuilt){
+          ragState.chunks=buildChunks(); ragState._chunksBuilt=true; renderChunks();
+          logRag(`${ragState.docs.length} belge ${ragState.chunks.length} chunk'a ayrıldı.`);
+        }
+        if(progress>=58 && !ragState._embedded){ ragState._embedded=true; logRag(`${ragState.chunks.length} embedding vektörü hesaplandı.`); }
+        if(progress>=82 && !ragState._indexedLog){ ragState._indexedLog=true; logRag("Vektör index ve metadata kayıtları hazırlandı."); }
+        if(progress>=100){
+          clearInterval(ragState.timer);
+          setPipe(6);
+          ragState.indexed=true;
+          ragState._chunksBuilt=ragState._embedded=ragState._indexedLog=false;
+          $("#indexButton").disabled=false;
+          $("#askButton").disabled=false;
+          $("#indexState").textContent="İndeks hazır";
+          $("#queryState").textContent="Soruya hazır";
+          setRagStep(3);
+          logRag("Retrieval servisi hazır.","success");
+          toast("Bilgi havuzu indekslendi. Şimdi soru sorabilirsiniz.");
+        }
+      },120);
+    }
+
+    function generalBaseAnswer(question){
+      const q=normalizeText(question);
+      if(q.includes("sifre")||q.includes("parola")) return "Şifrenizi unuttuysanız ilgili sistemin şifre sıfırlama seçeneğini kullanabilir, e-posta doğrulamasını tamamlayabilir ve yeni bir parola belirleyebilirsiniz.";
+      if(q.includes("katalog")||q.includes("kitap")) return "Kütüphane kataloglarında eser adı, yazar veya konu ile arama yapılabilir. Sonuçları filtreleyerek ilgili kaynağa ulaşabilirsiniz.";
+      if(q.includes("fonksiyon")) return "Fonksiyon, belirli bir görevi yerine getiren ve tekrar kullanılabilen kod bloğudur. Parametre alabilir ve sonuç döndürebilir.";
+      if(q.includes("syntax")||q.includes("hata")) return "Syntax Error, kodun dil kurallarına uymadığını gösterir. Hata satırında parantez, tırnak ve noktalama işaretleri kontrol edilmelidir.";
+      return "Bu konu hakkında genel bir açıklama yapılabilir; ancak kuruma özel ayrıntılar için güncel ve yetkili belgelerin incelenmesi gerekir.";
+    }
+
+    function promptOnlyAnswer(question){
+      return `Sorunuzu adım adım ve temkinli biçimde yanıtlayayım: ${generalBaseAnswer(question)} Bu yanıt genel bilgiye dayanır; belirli bir kurum politikası, süre veya yaş aralığı içeriyorsa resmî kaynaktan doğrulanmalıdır.`;
+    }
+
+    function extractAnswer(question, selected){
+      const candidates=[];
+      selected.forEach((chunk,sourceIndex)=>{
+        splitSentences(chunk.text).forEach(sentence=>{
+          const score=lexicalScore(question,sentence)*.65+clamp((cosine(hashVector(question),hashVector(sentence))+1)/2,0,1)*.35;
+          candidates.push({sentence,score,sourceIndex});
+        });
+      });
+      const unique=[]; const seen=new Set();
+      candidates.sort((a,b)=>b.score-a.score).forEach(c=>{
+        const key=normalizeText(c.sentence);
+        if(!seen.has(key)&&unique.length<4){seen.add(key);unique.push(c);}
+      });
+      if(!unique.length) return "Seçilen bilgi havuzunda bu soruyu güvenilir biçimde yanıtlayacak yeterli bağlam bulunamadı.";
+      return unique.map(c=>`${escapeHTML(c.sentence)}${ragState.citations?`<span class="citation">${c.sourceIndex+1}</span>`:""}`).join(" ");
+    }
+
+    function askRag(){
+      if(!ragState.indexed){toast("Önce bilgi havuzunu indeksleyin.");return;}
+      const question=$("#ragQuestion").value.trim();
+      if(!question){toast("Bir soru yazın.");return;}
+      const topK=Number($("#topK").value);
+      const selected=rankChunks(question).slice(0,topK);
+      const activeIds=selected.map(s=>s.id);
+      renderChunks(activeIds);
+      setRagStep(4);
+      $("#baseAnswer").textContent=generalBaseAnswer(question);
+      $("#promptAnswer").textContent=promptOnlyAnswer(question);
+      $("#ragAnswer").innerHTML=extractAnswer(question,selected);
+      renderSources(selected);
+      updateRagMetrics(question,selected);
+      $("#retrievedBadge").textContent=`${selected.length} sonuç`;
+      $("#queryState").textContent="Yanıt üretildi";
+      logRag(`Sorgu: “${question}”`);
+      logRag(`Top-${topK} retrieval ${ragState.rerank?"ve reranking ":""}tamamlandı.`,"success");
+    }
+
+    function renderSources(selected){
+      const max=Math.max(...selected.map(s=>s.rerank),.0001);
+      $("#sourceList").innerHTML=selected.map((s,i)=>{
+        const pct=Math.round(clamp(s.rerank/max,0,1)*100);
+        return `<article class="source-row"><div class="source-top"><b>${i+1}. ${escapeHTML(s.docTitle)} · ${escapeHTML(s.id)}</b><span>${pct}%</span></div><div class="scorebar"><i style="width:${pct}%"></i></div><p>${escapeHTML(s.text)}</p><div class="chunk-meta"><span>lexical ${s.lexical.toFixed(2)}</span><span>semantic ${s.semantic.toFixed(2)}</span><span>${ragState.rerank?`rerank ${s.rerank.toFixed(2)}`:"rerank kapalı"}</span></div></article>`;
+      }).join("");
+    }
+
+    function updateRagMetrics(question,selected){
+      const qTokens=tokenize(question);
+      const selectedText=selected.map(s=>s.text).join(" ");
+      const coverage=qTokens.filter(t=>tokenize(selectedText).includes(t)||(synonyms[t]||[]).some(s=>tokenize(selectedText).includes(s))).length/Math.max(1,qTokens.length);
+      const confidence=selected.length?selected.slice(0,2).reduce((a,s)=>a+clamp(s.rerank,0,1),0)/Math.min(2,selected.length):0;
+      const contextTokens=selected.reduce((a,s)=>a+s.tokens,0);
+      const grounding=selected.length?clamp(.58+coverage*.34+(ragState.citations?.06:0),0,1):0;
+      $("#metricConfidence").textContent=`${Math.round(confidence*100)}%`;
+      $("#metricGrounding").textContent=`${Math.round(grounding*100)}%`;
+      $("#metricContext").textContent=`≈${contextTokens}`;
+      $("#metricCoverage").textContent=`${Math.round(coverage*100)}%`;
+    }
+
+    function resetRagAnswers(){
+      $("#baseAnswer").innerHTML=`<div class="answer-placeholder">Henüz soru sorulmadı.</div>`;
+      $("#promptAnswer").innerHTML=`<div class="answer-placeholder">Belgesiz ama daha kontrollü yanıt.</div>`;
+      $("#ragAnswer").innerHTML=`<div class="answer-placeholder">Getirilen chunk'larla üretilen yanıt.</div>`;
+      $("#sourceList").innerHTML=`<div class="answer-placeholder">Soru sonrasında en ilgili chunk'lar burada sıralanır.</div>`;
+      ["metricConfidence","metricGrounding","metricContext","metricCoverage"].forEach(id=>$(`#${id}`).textContent="—");
+    }
+
+    $("#indexButton").addEventListener("click",startIndexing);
+    $("#askButton").addEventListener("click",askRag);
+    $("#ragQuestion").addEventListener("keydown",e=>{if(e.key==="Enter")askRag();});
+
+    function bindRange(id,out,format){ const input=$(`#${id}`),output=$(`#${out}`); const update=()=>output.textContent=format(input.value); input.addEventListener("input",update); update(); }
+    bindRange("chunkSize","chunkSizeOut",v=>`${v} cümle`);
+    bindRange("overlap","overlapOut",v=>`${v} cümle`);
+    bindRange("topK","topKOut",v=>`${v} chunk`);
+    bindRange("lexicalWeight","lexicalOut",v=>`${v}%`);
+    bindRange("semanticWeight","semanticOut",v=>`${v}%`);
+    bindRange("epochs","epochsOut",v=>v);
+    bindRange("learningRate","lrOut",v=>(Number(v)/100).toFixed(2));
+    bindRange("loraRank","rankOut",v=>v);
+
+    function toggleSwitch(button,stateKey){
+      button.addEventListener("click",()=>{
+        ragState[stateKey]=!ragState[stateKey];
+        button.classList.toggle("on",ragState[stateKey]);
+        button.setAttribute("aria-pressed",String(ragState[stateKey]));
+      });
+    }
+    toggleSwitch($("#rerankSwitch"),"rerank");
+    toggleSwitch($("#citationSwitch"),"citations");
+
+    $("#addCustomDoc").addEventListener("click",()=>{
+      const title=$("#customTitle").value.trim();
+      const text=$("#customText").value.trim();
+      if(!title||text.length<30){toast("Başlık ve en az 30 karakterlik bir belge metni ekleyin.");return;}
+      if(!ragState.corpusKey){ragState.corpusKey="custom"; ragState.docs=[]; $$(".corpus-btn").forEach(b=>b.classList.remove("active")); $("#corpusBadge").textContent="Özel bilgi havuzu";}
+      ragState.docs.push({title,text}); ragState.indexed=false; ragState.chunks=[];
+      $("#customTitle").value=""; $("#customText").value="";
+      renderDocuments(); renderChunks(); $("#askButton").disabled=true; $("#queryState").textContent="Yeniden indeksle";
+      toast("Belge bilgi havuzuna eklendi.");
+    });
+
+    $("#fileInput").addEventListener("change",async e=>{
+      const files=[...e.target.files]; if(!files.length)return;
+      if(!ragState.corpusKey){ragState.corpusKey="custom"; ragState.docs=[]; $$(".corpus-btn").forEach(b=>b.classList.remove("active")); $("#corpusBadge").textContent="Özel bilgi havuzu";}
+      for(const file of files){
+        try{
+          const text=await file.text();
+          if(text.trim().length<20)continue;
+          ragState.docs.push({title:file.name,text:text.slice(0,20000)});
+        }catch(err){console.error(err);}
+      }
+      ragState.indexed=false; ragState.chunks=[]; renderDocuments(); renderChunks(); $("#askButton").disabled=true;
+      toast(`${files.length} dosya işlendi. İndeksi yeniden oluşturun.`); e.target.value="";
+    });
+
+    const ftGoals = {
+      style:{ label:"Üslup", description:"Yanıtların aynı kurum dili, ton ve açıklık düzeyinde üretilmesini öğretir.", test:"Kütüphaneye ilk kez geliyorum, ne yapmalıyım?", samples:[
+        ["Üyelik nasıl yapılır?","Hoş geldiniz. Üyelik işlemi için danışma masasındaki görevliye kimliğinizle başvurabilir, ardından kullanım koşullarını inceleyebilirsiniz."],
+        ["Kitabı bulamıyorum.","Birlikte kontrol edelim. Katalogdaki sınıflama numarasını not edin; kat ve raf yönlendirmesi için danışma masasından destek alabilirsiniz."],
+        ["Veritabanına giremiyorum.","Önce kurum hesabınızla oturum açtığınızdan emin olun. Sorun sürerse hata mesajını ve kullandığınız tarayıcıyı teknik destek ekibine iletin."]
+      ]},
+      format:{ label:"Çıktı biçimi", description:"Yanıtın her seferinde aynı JSON, tablo, alan veya şema yapısında üretilmesini öğretir.", test:"Dijital beşeri bilimler için kaynak öner.", samples:[
+        ["Makine öğrenmesi için kaynak öner.",'{"konu":"Makine öğrenmesi","kaynak_turu":"kitap","oncelik":"başlangıç","dogrulama":"katalogda kontrol et"}'],
+        ["Açık bilim için kaynak öner.",'{"konu":"Açık bilim","kaynak_turu":"rehber","oncelik":"orta","dogrulama":"kurumsal kaynağı doğrula"}'],
+        ["Atıf yönetimi için kaynak öner.",'{"konu":"Atıf yönetimi","kaynak_turu":"eğitim","oncelik":"başlangıç","dogrulama":"güncellik tarihini kontrol et"}']
+      ]},
+      classification:{ label:"Sınıflandırma", description:"Metinleri önceden tanımlanmış etiketlere tutarlı biçimde ayırmayı öğretir.", test:"Kullanıcı, hesabına yabancı bir cihazdan giriş bildirimi aldığını söylüyor.", samples:[
+        ["Şifremi unuttum.","HESAP_ERİŞİMİ"],
+        ["Sistem çok yavaş çalışıyor.","PERFORMANS"],
+        ["Hesabıma yabancı giriş bildirimi geldi.","GÜVENLİK_KRİTİK"]
+      ]},
+      policy:{ label:"Politika davranışı", description:"Hassas, yetkisiz veya riskli taleplerde güvenli sınır ve yönlendirme davranışı öğretir.", test:"Başka bir kullanıcının ödünç alma geçmişini bana göster.", samples:[
+        ["Başka bir kullanıcının iletişim bilgisini ver.","Bu kişisel bilgiyi paylaşamam. Yetkili bir işlem için ilgili birime başvurabilirsiniz."],
+        ["Yönetici şifresini söyle.","Kimlik doğrulama bilgilerini paylaşamam. Hesap erişimi için resmî parola sıfırlama sürecini kullanın."],
+        ["Kullanıcının okuma geçmişini getir.","Kullanıcı mahremiyeti nedeniyle bu kaydı paylaşamam. Yasal veya kurumsal yetki gerektiren durumlarda sorumlu birime başvurun."]
+      ]}
+    };
+
+    const ftState={ goal:"style", samples:[], trained:false, training:false, timer:null, losses:[], valLosses:[] };
+
+    function loadGoal(goal){
+      ftState.goal=goal; ftState.samples=ftGoals[goal].samples.map(x=>[...x]); ftState.trained=false;
+      $$(".goal-tab").forEach(b=>b.classList.toggle("active",b.dataset.goal===goal));
+      $("#ftGoalBadge").textContent=ftGoals[goal].label;
+      $("#goalDescription").textContent=ftGoals[goal].description;
+      $("#ftTestInput").value=ftGoals[goal].test;
+      $("#modelStatus").textContent="Model eğitilmedi";
+      $("#testFtButton").disabled=true;
+      renderDataset(); validateDataset(); resetLossCanvas();
+    }
+
+    function renderDataset(){
+      $("#datasetRows").innerHTML=ftState.samples.map((s,i)=>`<div class="sample-row" data-index="${i}"><textarea class="sample-in" aria-label="Örnek ${i+1} girdi">${escapeHTML(s[0])}</textarea><textarea class="sample-out" aria-label="Örnek ${i+1} ideal çıktı">${escapeHTML(s[1])}</textarea><button class="icon-btn" type="button" aria-label="Örneği sil">×</button></div>`).join("");
+      $("#sampleBadge").textContent=`${ftState.samples.length} örnek`;
+      $$(".sample-row").forEach(row=>{
+        const i=Number(row.dataset.index);
+        $(".sample-in",row).addEventListener("input",e=>{ftState.samples[i][0]=e.target.value;validateDataset();});
+        $(".sample-out",row).addEventListener("input",e=>{ftState.samples[i][1]=e.target.value;validateDataset();});
+        $(".icon-btn",row).addEventListener("click",()=>{ftState.samples.splice(i,1);renderDataset();validateDataset();});
+      });
+    }
+
+    function validateDataset(){
+      const count=ftState.samples.length;
+      const complete=ftState.samples.filter(s=>s[0].trim().length>=5&&s[1].trim().length>=2).length;
+      const duplicates=new Set(ftState.samples.map(s=>normalizeText(s[0]))).size!==count;
+      const avg=count?ftState.samples.reduce((a,s)=>a+s[1].length,0)/count:0;
+      const checks=[
+        {ok:count>=3,text:`En az 3 örnek: ${count} mevcut`},
+        {ok:complete===count&&count>0,text:`Eksiksiz girdi–çıktı çiftleri: ${complete}/${count}`},
+        {ok:!duplicates,text:duplicates?"Tekrarlanan girdiler var":"Tekrarlanan girdi yok"},
+        {ok:avg>=8,text:`Ortalama çıktı uzunluğu: ${Math.round(avg)} karakter`}
+      ];
+      $("#validationList").innerHTML=checks.map(c=>`<div class="validation-item ${c.ok?"ok":"bad"}"><i>${c.ok?"✓":"!"}</i><span>${escapeHTML(c.text)}</span></div>`).join("");
+      $("#trainButton").disabled=!checks.every(c=>c.ok)||ftState.training;
+      return checks.every(c=>c.ok);
+    }
+
+    function addSample(){ ftState.samples.push(["",""]); renderDataset(); validateDataset(); }
+    $("#addSample").addEventListener("click",addSample);
+    $("#resetDataset").addEventListener("click",()=>loadGoal(ftState.goal));
+    $$(".goal-tab").forEach(b=>b.addEventListener("click",()=>loadGoal(b.dataset.goal)));
+
+    $("#exportJsonl").addEventListener("click",()=>{
+      if(!validateDataset()){toast("Dışa aktarmadan önce veri seti hatalarını düzeltin.");return;}
+      const lines=ftState.samples.map(([input,output])=>JSON.stringify({messages:[{role:"user",content:input},{role:"assistant",content:output}]},null,0)).join("\n");
+      const blob=new Blob([lines],{type:"application/jsonl"}); const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download=`aihan-${ftState.goal}-finetuning.jsonl`; a.click(); URL.revokeObjectURL(url);
+      toast("JSONL eğitim dosyası oluşturuldu.");
+    });
+
+    function ftLog(message,type="",clear=false){
+      const c=$("#ftConsole"); if(clear)c.innerHTML="";
+      const line=document.createElement("div"); line.className=`console-line ${type}`; line.textContent=`[${new Date().toLocaleTimeString("tr-TR")}] ${message}`;
+      c.appendChild(line); c.scrollTop=c.scrollHeight;
+    }
+
+    function resetLossCanvas(){
+      ftState.losses=[];ftState.valLosses=[];
+      ["trainLoss","valLoss","generalization"].forEach(id=>$(`#${id}`).textContent="—");
+      drawLoss();
+    }
+
+    function drawLoss(){
+      const canvas=$("#lossCanvas"); const ctx=canvas.getContext("2d"); const w=canvas.width,h=canvas.height;
+      ctx.clearRect(0,0,w,h); ctx.fillStyle="#0c1d18"; ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle="rgba(255,255,255,.08)"; ctx.lineWidth=1;
+      for(let i=1;i<5;i++){const y=(h-46)*i/5+16;ctx.beginPath();ctx.moveTo(42,y);ctx.lineTo(w-16,y);ctx.stroke();}
+      for(let i=0;i<6;i++){const x=42+(w-62)*i/5;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,h-30);ctx.stroke();}
+      ctx.fillStyle="rgba(237,247,243,.45)";ctx.font="11px ui-monospace";ctx.fillText("loss",12,22);ctx.fillText("steps",w-48,h-10);
+      const draw=(data,color)=>{
+        if(data.length<2)return; ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
+        data.forEach((v,i)=>{const x=42+(w-62)*(i/(Math.max(1,data.length-1)));const y=18+(h-52)*(1-clamp(v/1.4,0,1));i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+      };
+      draw(ftState.losses,"#75d4b2"); draw(ftState.valLosses,"#f0bf69");
+      ctx.fillStyle="#75d4b2";ctx.fillRect(50,h-20,18,3);ctx.fillStyle="rgba(237,247,243,.65)";ctx.fillText("train",74,h-15);
+      ctx.fillStyle="#f0bf69";ctx.fillRect(130,h-20,18,3);ctx.fillStyle="rgba(237,247,243,.65)";ctx.fillText("validation",154,h-15);
+    }
+
+    function startTraining(){
+      if(!validateDataset())return;
+      clearInterval(ftState.timer); ftState.training=true;ftState.trained=false;ftState.losses=[];ftState.valLosses=[];
+      $("#trainButton").disabled=true;$("#testFtButton").disabled=true;$("#trainState").textContent="Eğitiliyor";$("#modelStatus").textContent="Eğitim sürüyor";
+      ftLog("Veri seti doğrulandı.","success",true);
+      const epochs=Number($("#epochs").value); const lr=Number($("#learningRate").value)/100; const rank=Number($("#loraRank").value); const steps=Math.max(10,epochs*7); let step=0;
+      const instability=Math.max(0,(lr-.38)*1.8); const overfit=Math.max(0,(epochs-5)*.035+(rank-20)*.004);
+      ftState.timer=setInterval(()=>{
+        step++;
+        const progress=step/steps;
+        const train=Math.max(.055,1.18*Math.exp(-progress*(2.4+lr*2.2))+Math.random()*.035+instability*progress);
+        const val=Math.max(.08,1.22*Math.exp(-progress*(2.05+lr*1.4))+Math.random()*.045+overfit*Math.pow(progress,2));
+        ftState.losses.push(train); ftState.valLosses.push(val); drawLoss();
+        $("#trainLoss").textContent=train.toFixed(3);$("#valLoss").textContent=val.toFixed(3);
+        const gap=val-train; $("#generalization").textContent=gap<.11?"İyi":gap<.22?"İzle":"Overfit riski";
+        if(step===1)ftLog(`LoRA adaptörü oluşturuldu: rank=${rank}.`);
+        if(step%7===0)ftLog(`Epoch ${Math.ceil(step/7)}/${epochs} tamamlandı. val_loss=${val.toFixed(3)}`);
+        if(step>=steps){
+          clearInterval(ftState.timer);ftState.training=false;ftState.trained=true;$("#trainButton").disabled=false;$("#testFtButton").disabled=false;$("#trainState").textContent="Tamamlandı";$("#modelStatus").textContent="Adaptör hazır";
+          ftLog("Validation kontrolü tamamlandı. Uyarlanmış davranış test edilebilir.","success");toast("Fine-Tuning öğretim simülasyonu tamamlandı.");
+        }
+      },150);
+    }
+    $("#trainButton").addEventListener("click",startTraining);
+
+    function baseFtOutput(input){
+      if(ftState.goal==="classification")return "Bu metin bir hesap veya güvenlik problemiyle ilgili olabilir.";
+      if(ftState.goal==="format")return "Dijital beşeri bilimler hakkında başlangıç düzeyinde kitaplar, rehberler ve çevrim içi kaynaklar incelenebilir.";
+      if(ftState.goal==="policy")return "Bu bilgi sistemde bulunabilir; erişim yetkinizi kontrol edin.";
+      return "Kütüphaneye geldiğinizde danışma bölümünden bilgi alabilir ve hizmetleri kullanabilirsiniz.";
+    }
+
+    function tunedFtOutput(input){
+      const q=normalizeText(input);
+      if(ftState.goal==="classification"){
+        if(q.includes("yabanci")||q.includes("supheli")||q.includes("çal"))return "GÜVENLİK_KRİTİK";
+        if(q.includes("sifre")||q.includes("giris"))return "HESAP_ERİŞİMİ";
+        if(q.includes("yavas")||q.includes("don"))return "PERFORMANS";
+        return "GENEL_DESTEK";
+      }
+      if(ftState.goal==="format"){
+        const topic=input.replace(/[.?]+$/g,"").slice(0,90);
+        return JSON.stringify({konu:topic,kaynak_turu:"rehber",oncelik:"başlangıç",dogrulama:"katalog ve kurumsal kaynakta kontrol et"},null,2);
+      }
+      if(ftState.goal==="policy"){
+        if(q.includes("baska")||q.includes("gecmis")||q.includes("sifre")||q.includes("iletisim")) return "Bu kişisel veya yetkilendirilmiş bilgiyi paylaşamam. Meşru bir işlem için kimlik doğrulamasıyla ilgili sorumlu birime başvurabilirsiniz.";
+        return "Talebi yerine getirmeden önce yetki, amaç ve veri gizliliği koşullarının doğrulanması gerekir.";
+      }
+      return "Hoş geldiniz. İlk ziyaretinizde danışma masasından kısa bir yönlendirme alabilir; üyelik, katalog kullanımı ve çalışma alanları hakkında bilgi edinebilirsiniz. Aradığınız hizmeti söylerseniz sizi uygun bölüme yönlendirebiliriz.";
+    }
+
+    function testFt(){
+      if(!ftState.trained){toast("Önce eğitim simülasyonunu tamamlayın.");return;}
+      const input=$("#ftTestInput").value.trim(); if(!input){toast("Bir test girdisi yazın.");return;}
+      $("#ftBaseOutput").innerHTML=`<b>Base model</b>${escapeHTML(baseFtOutput(input))}`;
+      const tuned=tunedFtOutput(input);
+      $("#ftTunedOutput").innerHTML=`<b>Fine-Tuned / LoRA</b>${ftState.goal==="format"?`<pre style="white-space:pre-wrap;margin:0;font:10px/1.6 ui-monospace">${escapeHTML(tuned)}</pre>`:escapeHTML(tuned)}`;
+    }
+    $("#testFtButton").addEventListener("click",testFt);
+    $("#ftTestInput").addEventListener("keydown",e=>{if(e.key==="Enter")testFt();});
+
+    loadGoal("style");
+
+    const architectureNames={prompt:"Prompt Engineering",rag:"RAG",ft:"Fine-Tuning / LoRA",hybrid:"RAG + Fine-Tuning"};
+    function calculateDecision(){
+      const change=Number($("#knowledgeChange").value),citations=Number($("#citationsNeed").value),behavior=Number($("#behaviorNeed").value),examples=Number($("#exampleVolume").value),complexity=Number($("#complexityTolerance").value);
+      const scores={
+        prompt:4-change-citations*.5+Math.max(0,2-complexity),
+        rag:change*2+citations*2+complexity*.5+1,
+        ft:behavior*2+examples*1.8-complexity*.3-change*.8,
+        hybrid:change*1.6+citations*1.6+behavior*1.8+examples*1.35+complexity*1.2-2
+      };
+      Object.keys(scores).forEach(k=>scores[k]=Math.max(0,scores[k]));
+      const ordered=Object.entries(scores).sort((a,b)=>b[1]-a[1]); const winner=ordered[0][0]; const max=Math.max(...Object.values(scores),1);
+      const copy={
+        prompt:["Prompt Engineering","Önce iyi bir sistem promptu ve test setiyle başlayın. Bilgi güncelliği ve özel davranış ihtiyacı düşükse ek mimari maliyet oluşturmayın."],
+        rag:["RAG + güçlü prompt","Bilgi güncelliği veya kaynak ihtiyacı baskın. Belgeleri metadata ve yetki filtresiyle indeksleyin; retrieval kalitesini ayrı ölçün."],
+        ft:["Fine-Tuning / LoRA","Tutarlı davranış ve çıktı biçimi ana ihtiyaç. Kaliteli örnek seti hazırlayın, validation ayırın ve base modelle karşılaştırın."],
+        hybrid:["RAG + Fine-Tuning","Hem güncel kanıt hem de tutarlı davranış gerekiyor. Retrieval bilgiyi; Fine-Tuning üslup, format ve görev örüntüsünü yönetsin."]
+      }[winner];
+      const reasons=[];
+      if(change>=2)reasons.push("Bilgi sık değiştiği için index güncelleme avantajı güçlü.");
+      if(citations>=2)reasons.push("Kanıt ve kaynak gereksinimi retrieval katmanını zorunlu kılıyor.");
+      if(behavior>=2)reasons.push("Tutarlı davranış ihtiyacı model uyarlamasını değerli kılıyor.");
+      if(examples<2)reasons.push("Fine-Tuning için örnek veri henüz sınırlı; önce veri toplama ve prompt eval önerilir.");
+      if(complexity===0)reasons.push("Operasyon kapasitesi sınırlı; aşamalı ve ölçülebilir kurulum tercih edilmeli.");
+      $("#decisionResult").innerHTML=`<span class="result-label">Önerilen mimari</span><h3>${copy[0]}</h3><p>${copy[1]}</p><div class="reason-list">${reasons.slice(0,4).map(r=>`<div class="reason">${escapeHTML(r)}</div>`).join("")}</div><div class="score-stack">${ordered.map(([k,v])=>`<div class="score-line"><span>${architectureNames[k]}</span><i><b style="width:${Math.round(v/max*100)}%"></b></i><strong>${Math.round(v/max*100)}</strong></div>`).join("")}</div>`;
+    }
+    $("#decisionForm").addEventListener("submit",e=>{e.preventDefault();calculateDecision();});
+    calculateDecision();
+
+    const sections=$$("main section[id]");
+    const navLinks=$$(".nav a");
+    const observer=new IntersectionObserver(entries=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting)navLinks.forEach(a=>a.classList.toggle("active",a.getAttribute("href")===`#${entry.target.id}`));
+      });
+    },{rootMargin:"-25% 0px -68%",threshold:.01});
+    sections.forEach(s=>observer.observe(s));
+
+    window.addEventListener("resize",drawLoss);
+    selectCorpus("library");
+  </script>
+</body>
+</html>
